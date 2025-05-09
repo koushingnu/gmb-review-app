@@ -2,39 +2,52 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, CircularProgress, Alert, Paper } from "@mui/material";
 
 export default function SummaryPage() {
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/reviews/summary")
       .then(async (res) => {
-        if (!res.ok) throw new Error("サマリ取得失敗");
-        const { summary } = await res.json();
-        setSummary(summary);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to fetch");
+        return json;
       })
-      .catch((e) => setError(e.message))
+      .then((data) => setSummary(data.summary))
+      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <Typography>読み込み中...</Typography>;
-  if (error) return <Typography color="error">{error}</Typography>;
+  if (loading) {
+    return (
+      <Box textAlign="center" mt={4}>
+        <CircularProgress />
+        <Typography mt={2}>総評を生成中…</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box m={4}>
+        <Alert severity="error">エラー: {error}</Alert>
+      </Box>
+    );
+  }
 
   return (
-    <Box p={2}>
-      <Typography variant="h4" gutterBottom>
-        レビュー総評
-      </Typography>
-      <Typography
-        variant="body1"
-        component="pre"
-        sx={{ whiteSpace: "pre-wrap" }}
-      >
-        {summary}
-      </Typography>
+    <Box m={4}>
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          レビュー総評
+        </Typography>
+        <Typography component="div" sx={{ whiteSpace: "pre-wrap", mt: 2 }}>
+          {summary}
+        </Typography>
+      </Paper>
     </Box>
   );
 }

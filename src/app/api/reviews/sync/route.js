@@ -1,6 +1,6 @@
 // src/app/api/reviews/sync/route.js
 import { google } from "googleapis";
-import { supabase } from "../../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
   try {
