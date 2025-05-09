@@ -23,7 +23,7 @@ export default class MyDocument extends Document {
         enhanceApp: (App) => (props) => (
           // emotionCache を App に渡すことで、
           // MUI の styled-components 系がこのキャッシュを使うようになる
-          <App emotionCache={cache} {...props} />
+          (<App emotionCache={cache} {...props} />)
         ),
       });
 
