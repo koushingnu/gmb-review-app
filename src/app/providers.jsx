@@ -1,10 +1,10 @@
+// src/app/providers.jsx
 "use client";
 
-import * as React from "react";
 import { CacheProvider } from "@emotion/react";
+import createEmotionCache from "@/lib/createEmotionCache";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "@/lib/theme";
-import createEmotionCache from "@/lib/createEmotionCache";
 
 const clientSideEmotionCache = createEmotionCache();
 

@@ -1,23 +1,17 @@
-import "./globals.css";
-import ClientApp from "./ClientApp";
+// src/app/layout.js
 
 export const metadata = {
   title: "GMB レビュー管理",
-  description: "Google My Business のレビュー管理アプリ",
+  description: "Google My Business のレビュー一覧",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="ja">
       <body
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-        }}
+        style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
       >
-        {/* ClientApp.jsx は "use client" なので中はクライアントで動きます */}
-        <ClientApp>{children}</ClientApp>
+        {children}
       </body>
     </html>
   );
