@@ -8,10 +8,10 @@ import {
   Button,
   CircularProgress,
   Stack,
-  MenuItem,
-  Select,
   FormControl,
   InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import ReviewsList from "./components/ReviewsList";
 
@@ -21,7 +21,7 @@ export default function ReviewsDashboard() {
   const [syncing, setSyncing] = useState(false);
   const [sortKey, setSortKey] = useState("create_time");
 
-  // レビュー取得
+  // reviews を取得
   useEffect(() => {
     fetchReviews();
   }, [sortKey]);
@@ -34,12 +34,10 @@ export default function ReviewsDashboard() {
     setLoading(false);
   };
 
-  // 同期ボタン処理
+  // GMB API からレビューを同期
   const handleSync = async () => {
     setSyncing(true);
-    const res = await fetch("/api/reviews/sync");
-    const data = await res.json();
-    // 成功メッセージなどは任意で通知
+    await fetch("/api/reviews/sync");
     await fetchReviews();
     setSyncing(false);
   };
@@ -77,12 +75,11 @@ export default function ReviewsDashboard() {
           >
             <MenuItem value="create_time">新着順</MenuItem>
             <MenuItem value="star_rating">評価順</MenuItem>
-            {/* 他のソートも追加可能 */}
           </Select>
         </FormControl>
       </Stack>
 
-      {/* レビューリスト */}
+      {/* レビュー一覧 */}
       {loading ? (
         <Box textAlign="center" mt={4}>
           <CircularProgress />

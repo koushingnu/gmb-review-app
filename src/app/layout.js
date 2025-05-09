@@ -1,18 +1,16 @@
 // src/app/layout.js
 import "./globals.css";
-import ClientApp from "./ClientApp"; // ← これを追加
+import ClientApp from "./ClientApp";
 
 export const metadata = {
   title: "GMB レビュー管理",
-  description: "Google My Business のレビュー管理アプリ",
+  description: "Google My Business のレビューをまとめて管理",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="ja">
-      <head />
       <body>
-        {/* ClientApp がヘッダー・フッターを包む */}
         <ClientApp>{children}</ClientApp>
       </body>
     </html>
