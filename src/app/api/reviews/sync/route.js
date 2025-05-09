@@ -31,7 +31,7 @@ export async function GET() {
     if (!accountIdFull) {
       return new Response(
         JSON.stringify({ message: "アカウントが見つかりません" }),
-        { status: 404 }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
     const accountId = accountIdFull.split("/")[1];
@@ -45,7 +45,7 @@ export async function GET() {
     if (locations.length === 0) {
       return new Response(
         JSON.stringify({ message: "ロケーションがありません" }),
-        { status: 404 }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
     const locationName = locations[0].name; // e.g. "accounts/123/locations/456"
@@ -77,42 +77,35 @@ export async function GET() {
       nextPageToken = body.nextPageToken;
     } while (nextPageToken);
 
-    // 7. DB 側のレコード数を取得
-    const { count: dbCount, error: countErr } = await supabase
+    // ─────────── 新規のみ同期するロジック ───────────
+
+    // 7. DB にある既存の review_id を全取得
+    const { data: existing, error: existErr } = await supabase
       .from("reviews")
-      .select("review_id", { head: true, count: "exact" });
-    if (countErr) throw countErr;
+      .select("review_id");
+    if (existErr) throw existErr;
+    const existingIds = new Set(existing.map((r) => r.review_id));
 
-    // 8. フル同期か差分同期か判定
-    const isFullSync = (dbCount ?? 0) < allReviews.length;
+    // 8. 新規レビューのみフィルタ
+    const newReviews = allReviews.filter((r) => !existingIds.has(r.reviewId));
 
-    // 9. フィルタリング：フル同期なら全件、それ以外は差分同期
-    let toUpsert = allReviews;
-    if (!isFullSync) {
-      // 差分同期モード：DB の最新 create_time より後のレビューだけ
-      const { data: latest, error: latestErr } = await supabase
-        .from("reviews")
-        .select("create_time")
-        .eq("location_id", locationId)
-        .order("create_time", { ascending: false })
-        .limit(1);
-      if (latestErr) throw latestErr;
-      const lastSyncIso = latest?.[0]?.create_time
-        ? new Date(latest[0].create_time).toISOString()
-        : null;
-      toUpsert = lastSyncIso
-        ? allReviews.filter((r) => r.createTime > lastSyncIso)
-        : allReviews;
+    // 9. 新規がなければ早期リターン
+    if (newReviews.length === 0) {
+      return new Response(
+        JSON.stringify({ message: "新規レビューはありませんでした" }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // 10. starRating 列挙値 → 数値マッピング
+    // ─────────────── 通常の upsert 処理 ───────────────
     const ratingMap = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 };
+    let insertedCount = 0;
 
-    // 11. Supabase に upsert（レビュー & 返信）
-    for (const review of toUpsert) {
+    for (const review of newReviews) {
       const review_id = review.reviewId;
       const star_rating = ratingMap[review.starRating] ?? null;
 
+      // reviews テーブルに upsert
       const { error: revErr } = await supabase.from("reviews").upsert({
         review_id,
         resource_name: review.name,
@@ -126,8 +119,11 @@ export async function GET() {
       });
       if (revErr) {
         console.error(`❌ Review upsert failed for ${review_id}`, revErr);
+      } else {
+        insertedCount++;
       }
 
+      // review_replies テーブルに upsert（返信があれば）
       if (review.reviewReply) {
         const { error: repErr } = await supabase.from("review_replies").upsert({
           review_id,
@@ -140,16 +136,12 @@ export async function GET() {
       }
     }
 
+    // 12. レスポンス返却
     return new Response(
       JSON.stringify({
-        message: `${toUpsert.length} 件のレビューを同期しました (${
-          isFullSync ? "全件同期" : "差分同期"
-        })`,
+        message: `${insertedCount} 件の新規レビューを同期しました`,
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("❌ Error:", error);

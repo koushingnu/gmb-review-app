@@ -7,7 +7,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "restructure": "node scripts/restructureProject.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -30,6 +31,8 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
+    "fs-extra": "^11.3.0",
+    "globby": "^14.1.0",
     "tailwindcss": "^4"
   }
 }

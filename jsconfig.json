@@ -1,11 +1,13 @@
-// jsconfig.json
 {
   "compilerOptions": {
-    "baseUrl": "src",
+    "baseUrl": ".",
     "paths": {
-      "@/lib/*": ["lib/*"],
-      "@/context/*": ["app/context/*"],
-      "@/components/*": ["app/components/*"]
+      // これで "@/components/XXX" → "src/components/XXX" に解決されます
+      "@/components/*": ["src/components/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/app/*": ["src/app/*"]
     }
-  }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+  "exclude": ["node_modules"]
 }
