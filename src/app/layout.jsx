@@ -11,6 +11,7 @@ import Providers from "./providers";
 import dynamic from "next/dynamic";
 const Header = dynamic(() => import("@/components/Header"), { ssr: false });
 import Footer from "@/components/Footer";
+import { DateFilterProvider } from "@/lib/DateFilterContext";
 
 // Emotion キャッシュと SSR 設定
 const cache = createCache({ key: "css", prepend: true });
@@ -34,19 +35,22 @@ export default function RootLayout({ children }) {
       <html lang="ja">
         <body>
           <Providers>
-            <Header />
-            <main
-              style={{
-                flex: 1,
-                width: "100%",
-                maxWidth: 1200,
-                margin: "0 auto",
-                padding: "1rem",
-              }}
-            >
-              {children}
-            </main>
-            <Footer />
+            {/* ここだけに DateFilterProvider をラップ */}
+            <DateFilterProvider>
+              <Header />
+              <main
+                style={{
+                  flex: 1,
+                  width: "100%",
+                  maxWidth: 1200,
+                  margin: "0 auto",
+                  padding: "1rem",
+                }}
+              >
+                {children}
+              </main>
+              <Footer />
+            </DateFilterProvider>
           </Providers>
         </body>
       </html>

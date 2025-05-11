@@ -3,6 +3,8 @@
 
 import React, { useState, useEffect } from "react";
 import ReviewsList from "@/components/ReviewsList";
+import DateFilterControls from "@/components/DateFilterControls";
+import { useDateFilter } from "@/lib/DateFilterContext";
 import {
   Box,
   Typography,
@@ -23,6 +25,7 @@ const AlertSnackbar = React.forwardRef(function Alert(props, ref) {
 });
 
 export default function ReviewsDashboard() {
+  const { from, to } = useDateFilter();
   const [reviews, setReviews] = useState([]);
   const [sortBy, setSortBy] = useState("newest");
   const [filterRating, setFilterRating] = useState("");
@@ -31,40 +34,52 @@ export default function ReviewsDashboard() {
   const [newCount, setNewCount] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-  // API からレビューを取得
+  // API からレビューを取得（サーバー側でフィルタ・ソートを適用）
   const loadReviews = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/reviews");
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Fetch failed");
-      let list = json.reviews || [];
-      // ソート処理
-      if (sortBy === "newest") {
-        list.sort((a, b) => new Date(b.create_time) - new Date(a.create_time));
-      } else {
-        list.sort((a, b) => b.star_rating - a.star_rating);
+      const params = new URLSearchParams();
+      if (from?.year && from?.month) {
+        params.set(
+          "from",
+          `${from.year}-${String(from.month).padStart(2, "0")}-01`
+        );
       }
-      // 評価フィルタ処理
+      if (to?.year && to?.month) {
+        // ここで「月の最終日」を取得
+        const lastDay = new Date(to.year, to.month, 0).getDate();
+        params.set(
+          "to",
+          `${to.year}-${String(to.month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`
+        );
+      }
+      // ソートと評価フィルタをパラメータに追加
+      params.set("sortBy", sortBy);
       if (filterRating) {
-        list = list.filter((r) => r.star_rating >= Number(filterRating));
+        params.set("filterRating", filterRating);
       }
-      setReviews(list);
+
+      const res = await fetch(`/api/reviews?${params.toString()}`);
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.message || "Fetch failed");
+      }
+      setReviews(json.reviews || []);
     } catch (e) {
-      console.error(e);
-      setError(e.message);
+      console.error("レビュー取得エラー:", e);
+      setError(e.message || "レビュー取得に失敗しました");
     } finally {
       setLoading(false);
     }
   };
 
-  // マウント時に最初のデータ取得
+  // 初回ロード & パラメータ変更時に再取得
   useEffect(() => {
     loadReviews();
-  }, []);
+  }, [from, to, sortBy, filterRating]);
 
-  // 手動同期と再取得
+  // 手動同期
   const handleSyncClick = async () => {
     setLoading(true);
     setError("");
@@ -72,16 +87,17 @@ export default function ReviewsDashboard() {
     try {
       const syncRes = await fetch("/api/reviews/sync");
       const syncJson = await syncRes.json();
-      if (!syncRes.ok) throw new Error(syncJson.error || "Sync failed");
+      if (!syncRes.ok) {
+        throw new Error(syncJson.error || "Sync failed");
+      }
       const match = String(syncJson.message).match(/(\d+) 件/);
       const count = match ? Number(match[1]) : 0;
       setNewCount(count);
       setSnackbarOpen(true);
       await loadReviews();
     } catch (e) {
-      console.error(e);
-      setError(e.message);
-      setLoading(false);
+      console.error("同期エラー:", e);
+      setError(e.message || "同期に失敗しました");
     }
   };
 
@@ -96,7 +112,10 @@ export default function ReviewsDashboard() {
         レビュー一覧
       </Typography>
 
-      {/* 手動同期ボタン */}
+      {/* 日付フィルタ */}
+      <DateFilterControls />
+
+      {/* 手動同期 */}
       <Box mb={2} display="flex" alignItems="center" gap={2}>
         <Button
           variant="outlined"
@@ -108,7 +127,7 @@ export default function ReviewsDashboard() {
         </Button>
       </Box>
 
-      {/* 新規件数通知 */}
+      {/* 通知 */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
@@ -133,7 +152,7 @@ export default function ReviewsDashboard() {
         </Alert>
       )}
 
-      {/* フィルタ／ソートエリア */}
+      {/* フィルタ/ソート */}
       <Box display="flex" gap={2} mb={3} flexWrap="wrap">
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>ソート</InputLabel>
@@ -166,7 +185,7 @@ export default function ReviewsDashboard() {
         </Button>
       </Box>
 
-      {/* レビューリスト */}
+      {/* レビューリスト表示 */}
       {!loading && !error && <ReviewsList reviews={reviews} />}
     </Box>
   );

@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import DateFilterControls from "@/components/DateFilterControls";
+import { useDateFilter } from "@/lib/DateFilterContext";
 import {
   Box,
   Typography,
@@ -10,7 +12,6 @@ import {
   Paper,
   useTheme,
 } from "@mui/material";
-import { supabase } from "@/lib/supabase";
 import {
   ResponsiveContainer,
   BarChart,
@@ -26,9 +27,11 @@ import {
   Radar,
   Legend,
 } from "recharts";
+import { supabase } from "@/lib/supabase";
 
 export default function GraphsPage() {
   const theme = useTheme();
+  const { from, to, compareFrom, compareTo } = useDateFilter();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,7 +59,6 @@ export default function GraphsPage() {
           { key: "hygiene_score", label: "衛生面" },
         ];
 
-        // 0 を除外して平均を計算
         const avgData = categories.reduce((acc, { key, label }) => {
           const valid = rows
             .map((r) => r[key])
@@ -107,6 +109,9 @@ export default function GraphsPage() {
         レビュー平均スコア 可視化
       </Typography>
 
+      {/* 日付フィルタ + 比較 */}
+      <DateFilterControls enableCompare={true} />
+
       {/* 棒グラフ */}
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>
@@ -145,20 +150,13 @@ export default function GraphsPage() {
         <Box height={400}>
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={data} outerRadius="90%">
-              {/* 円形グリッドを円形に統一 */}
               <PolarGrid
                 gridType="circle"
                 stroke={theme.palette.divider}
                 strokeDasharray="3 3"
               />
               <PolarAngleAxis dataKey="category" tick={{ fontSize: 14 }} />
-              {/* 目盛りラインをすべて非表示、ドメインは0〜5固定 */}
-              <PolarRadiusAxis
-                tick={false}
-                axisLine={false}
-                domain={[0, 5]}
-                tickCount={6}
-              />
+              <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 5]} />
               <Radar
                 name="平均スコア"
                 dataKey="value"

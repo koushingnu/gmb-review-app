@@ -1,9 +1,8 @@
-// src/lib/DateFilterContext.jsx
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
-// フィルタ期間を保持・更新するコンテキストを作成
+// コンテキスト定義
 const DateFilterContext = createContext({
   from: null,
   to: null,
@@ -20,12 +19,6 @@ export function DateFilterProvider({ children }) {
   const [to, setTo] = useState(null);
   const [compareFrom, setCompareFrom] = useState(null);
   const [compareTo, setCompareTo] = useState(null);
-
-  // 必要に応じて URL や localStorage と同期させる場合はここで処理
-  useEffect(() => {
-    // 例: const params = new URLSearchParams(window.location.search);
-    //     setFrom(...);
-  }, []);
 
   return (
     <DateFilterContext.Provider
