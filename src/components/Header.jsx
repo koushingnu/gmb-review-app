@@ -1,4 +1,3 @@
-// src/app/components/Header.jsx
 "use client";
 
 import React from "react";
@@ -11,6 +10,7 @@ const navItems = [
   { label: "AI 点数化", href: "/analysis/score" },
   { label: "分析グラフ", href: "/analysis/graphs" },
   { label: "総評", href: "/analysis/summary" },
+  { label: "OAuth 設定", href: "/admin/oauth" },
 ];
 
 export default function Header() {
