@@ -1,7 +1,7 @@
 // src/app/reviews/page.jsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ReviewsList from "@/components/ReviewsList";
 import DateFilterControls from "@/components/DateFilterControls";
 import { useDateFilter } from "@/lib/DateFilterContext";
@@ -25,7 +25,8 @@ const AlertSnackbar = React.forwardRef(function Alert(props, ref) {
 });
 
 export default function ReviewsDashboard() {
-  const { from, to } = useDateFilter();
+  const { year, quarter } = useDateFilter();
+  const [showAll, setShowAll] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [sortBy, setSortBy] = useState("newest");
   const [filterRating, setFilterRating] = useState("");
@@ -34,37 +35,34 @@ export default function ReviewsDashboard() {
   const [newCount, setNewCount] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-  // API からレビューを取得（サーバー側でフィルタ・ソートを適用）
+  // 期間文字列をメモ化
+  const fromDate = useMemo(() => {
+    const m = (quarter - 1) * 3 + 1;
+    return `${year}-${String(m).padStart(2, "0")}-01`;
+  }, [year, quarter]);
+
+  const toDate = useMemo(() => {
+    const m = quarter * 3;
+    const lastDay = new Date(year, m, 0).getDate();
+    return `${year}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  }, [year, quarter]);
+
+  // レビュー取得
   const loadReviews = async () => {
     setLoading(true);
     setError("");
     try {
       const params = new URLSearchParams();
-      if (from?.year && from?.month) {
-        params.set(
-          "from",
-          `${from.year}-${String(from.month).padStart(2, "0")}-01`
-        );
+      if (!showAll) {
+        params.set("from", fromDate);
+        params.set("to", toDate);
       }
-      if (to?.year && to?.month) {
-        // ここで「月の最終日」を取得
-        const lastDay = new Date(to.year, to.month, 0).getDate();
-        params.set(
-          "to",
-          `${to.year}-${String(to.month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`
-        );
-      }
-      // ソートと評価フィルタをパラメータに追加
       params.set("sortBy", sortBy);
-      if (filterRating) {
-        params.set("filterRating", filterRating);
-      }
+      if (filterRating) params.set("filterRating", filterRating);
 
       const res = await fetch(`/api/reviews?${params.toString()}`);
       const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.message || "Fetch failed");
-      }
+      if (!res.ok) throw new Error(json.message || "Fetch failed");
       setReviews(json.reviews || []);
     } catch (e) {
       console.error("レビュー取得エラー:", e);
@@ -74,10 +72,10 @@ export default function ReviewsDashboard() {
     }
   };
 
-  // 初回ロード & パラメータ変更時に再取得
+  // エフェクト：フィルタ変更時のみ実行
   useEffect(() => {
     loadReviews();
-  }, [from, to, sortBy, filterRating]);
+  }, [fromDate, toDate, sortBy, filterRating, showAll]);
 
   // 手動同期
   const handleSyncClick = async () => {
@@ -87,10 +85,8 @@ export default function ReviewsDashboard() {
     try {
       const syncRes = await fetch("/api/reviews/sync");
       const syncJson = await syncRes.json();
-      if (!syncRes.ok) {
-        throw new Error(syncJson.error || "Sync failed");
-      }
-      const match = String(syncJson.message).match(/(\d+) 件/);
+      if (!syncRes.ok) throw new Error(syncJson.error || "Sync failed");
+      const match = String(syncJson.message).match(/(\d+)/);
       const count = match ? Number(match[1]) : 0;
       setNewCount(count);
       setSnackbarOpen(true);
@@ -98,32 +94,33 @@ export default function ReviewsDashboard() {
     } catch (e) {
       console.error("同期エラー:", e);
       setError(e.message || "同期に失敗しました");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === "clickaway") return;
-    setSnackbarOpen(false);
-  };
+  const handleSnackbarClose = () => setSnackbarOpen(false);
 
   return (
-    <Box m={4}>
-      <Typography variant="h4" gutterBottom>
-        レビュー一覧
+    <Box p={4}>
+      <Typography variant="h5" gutterBottom>
+        レビュー ダッシュボード
       </Typography>
 
-      {/* 日付フィルタ */}
-      <DateFilterControls />
+      {/* 期間選択 & 全件表示 */}
+      <DateFilterControls onShowAll={setShowAll} showAll={showAll} />
 
-      {/* 手動同期 */}
-      <Box mb={2} display="flex" alignItems="center" gap={2}>
+      {/* 同期 & 再読み込み */}
+      <Box display="flex" alignItems="center" mb={3} gap={2}>
         <Button
-          variant="outlined"
+          variant="contained"
           onClick={handleSyncClick}
           disabled={loading}
-          startIcon={loading && <CircularProgress size={16} />}
         >
           {loading ? "同期中…" : "手動同期"}
+        </Button>
+        <Button variant="outlined" onClick={loadReviews} disabled={loading}>
+          再読み込み
         </Button>
       </Box>
 
@@ -139,20 +136,7 @@ export default function ReviewsDashboard() {
         </AlertSnackbar>
       </Snackbar>
 
-      {/* ローディング・エラー */}
-      {loading && (
-        <Box textAlign="center" my={4}>
-          <CircularProgress />
-          <Typography mt={2}>レビュー取得中…</Typography>
-        </Box>
-      )}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {/* フィルタ/ソート */}
+      {/* ソート・評価フィルタ */}
       <Box display="flex" gap={2} mb={3} flexWrap="wrap">
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>ソート</InputLabel>
@@ -165,8 +149,7 @@ export default function ReviewsDashboard() {
             <MenuItem value="highest">評価順</MenuItem>
           </Select>
         </FormControl>
-
-        <FormControl size="small" sx={{ minWidth: 160 }}>
+        <FormControl size="small" sx={{ minWidth: 140 }}>
           <InputLabel>評価フィルタ</InputLabel>
           <Select
             value={filterRating}
@@ -174,18 +157,26 @@ export default function ReviewsDashboard() {
             onChange={(e) => setFilterRating(e.target.value)}
           >
             <MenuItem value="">全て</MenuItem>
-            <MenuItem value="5">5 星</MenuItem>
             <MenuItem value="4">4 星以上</MenuItem>
             <MenuItem value="3">3 星以上</MenuItem>
           </Select>
         </FormControl>
-
-        <Button variant="outlined" onClick={loadReviews} disabled={loading}>
-          再読み込み
-        </Button>
       </Box>
 
-      {/* レビューリスト表示 */}
+      {/* ローディング・エラー をソートの下に移動 */}
+      {loading && (
+        <Box textAlign="center" my={4}>
+          <CircularProgress />
+          <Typography mt={2}>レビュー取得中…</Typography>
+        </Box>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* レビュー一覧 */}
       {!loading && !error && <ReviewsList reviews={reviews} />}
     </Box>
   );

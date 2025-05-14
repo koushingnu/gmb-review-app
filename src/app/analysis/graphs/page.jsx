@@ -1,25 +1,36 @@
+// src/app/analysis/graphs/page.jsx
 "use client";
-import React, { useEffect, useState } from "react";
-import { Box, Typography } from "@mui/material";
-import DateFilterControls from "@/components/DateFilterControls";
-import { useDateFilter } from "@/lib/DateFilterContext";
+import React, { useState, useEffect } from "react";
 import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Legend,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-} from "recharts";
+  Box,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Switch,
+  FormControlLabel,
+  Paper,
+} from "@mui/material";
+import { useDateFilter } from "@/lib/DateFilterContext";
+import LineTrendChart from "@/components/LineTrendChart";
+import BalanceRadarChart from "@/components/BalanceRadarChart";
 
 export default function GraphPage() {
-  const { year, quarter } = useDateFilter();
+  const { year, quarter, setYear, setQuarter } = useDateFilter();
   const [data, setData] = useState([]);
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [compareYear, setCompareYear] = useState(year - 1);
+  const [compareQuarter, setCompareQuarter] = useState(quarter);
+
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - i);
+  const quarterOptions = [
+    { value: 1, label: "1〜3月" },
+    { value: 2, label: "4〜6月" },
+    { value: 3, label: "7〜9月" },
+    { value: 4, label: "10〜12月" },
+  ];
 
   useEffect(() => {
     fetch(`/api/analysis/quarterly?year=${year}&quarter=${quarter}`)
@@ -27,107 +38,163 @@ export default function GraphPage() {
       .then((json) => setData(json || []));
   }, [year, quarter]);
 
-  const selectedLabel = `${year}-Q${quarter}`;
-  const prevLabel = `${year - 1}-Q${quarter}`;
-
-  const selectedData =
-    data.find((d) => d.quarter_label === selectedLabel) || {};
-  const prevData = data.find((d) => d.quarter_label === prevLabel) || {};
-
-  const radarData = [
-    {
-      subject: "味",
-      [prevLabel]: prevData.taste_avg,
-      [selectedLabel]: selectedData.taste_avg,
-    },
-    {
-      subject: "接客",
-      [prevLabel]: prevData.service_avg,
-      [selectedLabel]: selectedData.service_avg,
-    },
-    {
-      subject: "価格",
-      [prevLabel]: prevData.price_avg,
-      [selectedLabel]: selectedData.price_avg,
-    },
-    {
-      subject: "立地",
-      [prevLabel]: prevData.location_avg,
-      [selectedLabel]: selectedData.location_avg,
-    },
-    {
-      subject: "衛生",
-      [prevLabel]: prevData.hygiene_avg,
-      [selectedLabel]: selectedData.hygiene_avg,
-    },
-  ];
-
   return (
     <Box sx={{ p: 4 }}>
       <Typography variant="h5" gutterBottom>
-        四半期ごとのレビュー分析
+        四半期スコア分析
       </Typography>
-      <DateFilterControls />
 
-      {/* 折れ線グラフ */}
-      <Box sx={{ width: "100%", height: 300, mb: 6 }}>
-        <ResponsiveContainer>
-          <LineChart
-            data={data}
-            margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-          >
-            <XAxis dataKey="quarter_label" />
-            <YAxis domain={["dataMin", "dataMax"]} />
-            <Legend />
-            <Line type="monotone" dataKey="taste_avg" name="味" connectNulls />
-            <Line
-              type="monotone"
-              dataKey="service_avg"
-              name="接客"
-              connectNulls
+      {/* 期間・比較モードコントロール */}
+      <Paper
+        variant="outlined"
+        sx={{ p: 2, mb: 4, borderRadius: 2, width: "100%" }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <FormControl size="small">
+            <InputLabel id="year-label">年</InputLabel>
+            <Select
+              labelId="year-label"
+              value={year}
+              label="年"
+              onChange={(e) => setYear(Number(e.target.value))}
+            >
+              {yearOptions.map((y) => (
+                <MenuItem key={y} value={y}>{`${y}年`}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small">
+            <InputLabel id="quarter-label">期間</InputLabel>
+            <Select
+              labelId="quarter-label"
+              value={quarter}
+              label="期間"
+              onChange={(e) => setQuarter(Number(e.target.value))}
+            >
+              {quarterOptions.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={comparisonMode}
+                onChange={(e) => setComparisonMode(e.target.checked)}
+              />
+            }
+            label="比較モード"
+          />
+          {comparisonMode && (
+            <>
+              <FormControl size="small">
+                <InputLabel id="compare-year-label">比較年</InputLabel>
+                <Select
+                  labelId="compare-year-label"
+                  value={compareYear}
+                  label="比較年"
+                  onChange={(e) => setCompareYear(Number(e.target.value))}
+                >
+                  {yearOptions.map((y) => (
+                    <MenuItem key={y} value={y}>{`${y}年`}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small">
+                <InputLabel id="compare-quarter-label">比較期間</InputLabel>
+                <Select
+                  labelId="compare-quarter-label"
+                  value={compareQuarter}
+                  label="比較期間"
+                  onChange={(e) => setCompareQuarter(Number(e.target.value))}
+                >
+                  {quarterOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </>
+          )}
+        </Box>
+      </Paper>
+
+      {/* チャート２つを等分して横並び */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          mb: 4,
+          width: "100%",
+        }}
+      >
+        {/* 左チャート */}
+        <Paper
+          variant="outlined"
+          sx={{
+            flex: 1,
+            p: 2,
+            borderRadius: 2,
+            height: 400,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            月ごとの5項目スコア推移
+          </Typography>
+          <Box sx={{ flex: 1 }}>
+            <LineTrendChart data={data} />
+          </Box>
+        </Paper>
+
+        {/* 右チャート */}
+        <Paper
+          variant="outlined"
+          sx={{
+            flex: 1,
+            p: 2,
+            borderRadius: 2,
+            height: 400,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            項目別スコアバランス
+          </Typography>
+          <Box sx={{ flex: 1 }}>
+            <BalanceRadarChart
+              data={data}
+              mainYear={year}
+              mainQuarter={quarter}
+              compareMode={comparisonMode}
+              compareYear={compareYear}
+              compareQuarter={compareQuarter}
             />
-            <Line
-              type="monotone"
-              dataKey="price_avg"
-              name="価格"
-              connectNulls
-            />
-            <Line
-              type="monotone"
-              dataKey="location_avg"
-              name="立地"
-              connectNulls
-            />
-            <Line
-              type="monotone"
-              dataKey="hygiene_avg"
-              name="衛生"
-              connectNulls
-            />
-          </LineChart>
-        </ResponsiveContainer>
+          </Box>
+        </Paper>
       </Box>
 
-      {/* レーダーチャート */}
-      <Box sx={{ width: "100%", height: 300 }}>
-        <ResponsiveContainer>
-          <RadarChart
-            data={radarData}
-            margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-          >
-            <PolarGrid />
-            <PolarAngleAxis dataKey="subject" />
-            <PolarRadiusAxis angle={30} domain={[1, 5]} />
-            <Radar dataKey={prevLabel} name={prevLabel} fillOpacity={0.3} />
-            <Radar
-              dataKey={selectedLabel}
-              name={selectedLabel}
-              fillOpacity={0.3}
-            />
-            <Legend />
-          </RadarChart>
-        </ResponsiveContainer>
-      </Box>
+      {/* AIによる総評パネル */}
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, width: "100%" }}>
+        <Typography variant="subtitle1" gutterBottom>
+          AIによる四半期総評
+        </Typography>
+        <Typography>
+          {`${year}年度 Q${quarter}は「味」のスコアが前年同四半期より向上しましたが、「接客」はやや低下傾向にあります。改善優先度は接客対応です。`}
+        </Typography>
+      </Paper>
     </Box>
   );
 }
