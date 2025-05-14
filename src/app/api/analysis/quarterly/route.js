@@ -14,8 +14,10 @@ export async function GET(request) {
 
   const startMonth = (quarter - 1) * 3 + 1;
   const endMonth = startMonth + 2;
+
+  // ← ここを year−2 に変更
   const fromDate = new Date(
-    Date.UTC(year - 1, startMonth - 1, 1)
+    Date.UTC(year - 2, startMonth - 1, 1)
   ).toISOString();
   const toDate = new Date(Date.UTC(year, endMonth, 0)).toISOString();
 
@@ -29,7 +31,6 @@ export async function GET(request) {
       status: 500,
     });
   }
-
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: { "Content-Type": "application/json" },

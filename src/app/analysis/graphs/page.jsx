@@ -1,4 +1,3 @@
-// src/app/analysis/graphs/page.jsx
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -13,8 +12,10 @@ import {
   Paper,
 } from "@mui/material";
 import { useDateFilter } from "@/lib/DateFilterContext";
-import LineTrendChart from "@/components/LineTrendChart";
+import LineTrendChart, { LABELS } from "@/components/LineTrendChart";
+import MetricSelector from "@/components/MetricSelector";
 import BalanceRadarChart from "@/components/BalanceRadarChart";
+import RatingDistributionChart from "@/components/RatingDistributionChart";
 
 export default function GraphPage() {
   const { year, quarter, setYear, setQuarter } = useDateFilter();
@@ -22,6 +23,15 @@ export default function GraphPage() {
   const [comparisonMode, setComparisonMode] = useState(false);
   const [compareYear, setCompareYear] = useState(year - 1);
   const [compareQuarter, setCompareQuarter] = useState(quarter);
+
+  // トレンド表示する項目を初期化（全部ON）
+  const allKeys = Object.keys(LABELS);
+  const [selectedMetrics, setSelectedMetrics] = useState(allKeys);
+  const toggleMetric = (key) => {
+    setSelectedMetrics((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
 
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -41,10 +51,10 @@ export default function GraphPage() {
   return (
     <Box sx={{ p: 4 }}>
       <Typography variant="h5" gutterBottom>
-        四半期スコア分析
+        四半期スコア分析（過去2年分）
       </Typography>
 
-      {/* 期間・比較モードコントロール */}
+      {/* 期間＆比較モードコントロール */}
       <Paper
         variant="outlined"
         sx={{ p: 2, mb: 4, borderRadius: 2, width: "100%" }}
@@ -129,43 +139,39 @@ export default function GraphPage() {
         </Box>
       </Paper>
 
-      {/* チャート２つを等分して横並び */}
-      <Box
+      {/* MetricSelector */}
+      <MetricSelector selected={selectedMetrics} onToggle={toggleMetric} />
+
+      {/* トレンドグラフ（全幅） */}
+      <Paper
+        variant="outlined"
         sx={{
-          display: "flex",
-          gap: 2,
-          mb: 4,
           width: "100%",
+          height: 400,
+          p: 2,
+          mb: 4,
+          borderRadius: 2,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        {/* 左チャート */}
-        <Paper
-          variant="outlined"
-          sx={{
-            flex: 1,
-            p: 2,
-            borderRadius: 2,
-            height: 400,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Typography variant="h6" gutterBottom>
-            月ごとの5項目スコア推移
-          </Typography>
-          <Box sx={{ flex: 1 }}>
-            <LineTrendChart data={data} />
-          </Box>
-        </Paper>
+        <Typography variant="h6" gutterBottom>
+          四半期スコア推移（過去2年）
+        </Typography>
+        <Box sx={{ flex: 1 }}>
+          <LineTrendChart data={data} selectedMetrics={selectedMetrics} />
+        </Box>
+      </Paper>
 
-        {/* 右チャート */}
+      {/* レーダ＆配布横棒を横並び */}
+      <Box sx={{ display: "flex", gap: 2, width: "100%", mb: 4 }}>
         <Paper
           variant="outlined"
           sx={{
             flex: 1,
+            height: 360,
             p: 2,
             borderRadius: 2,
-            height: 400,
             display: "flex",
             flexDirection: "column",
           }}
@@ -184,16 +190,33 @@ export default function GraphPage() {
             />
           </Box>
         </Paper>
+
+        <Paper
+          variant="outlined"
+          sx={{
+            flex: 1,
+            height: 360,
+            p: 2,
+            borderRadius: 2,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            全件☆5段階評価分布
+          </Typography>
+          <Box sx={{ flex: 1 }}>
+            <RatingDistributionChart />
+          </Box>
+        </Paper>
       </Box>
 
-      {/* AIによる総評パネル */}
+      {/* AIによる総評 */}
       <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, width: "100%" }}>
         <Typography variant="subtitle1" gutterBottom>
           AIによる四半期総評
         </Typography>
-        <Typography>
-          {`${year}年度 Q${quarter}は「味」のスコアが前年同四半期より向上しましたが、「接客」はやや低下傾向にあります。改善優先度は接客対応です。`}
-        </Typography>
+        <Typography>{`${year}年度 Q${quarter}の分析結果です。`}</Typography>
       </Paper>
     </Box>
   );
