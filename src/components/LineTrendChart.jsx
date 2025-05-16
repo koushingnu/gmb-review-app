@@ -1,4 +1,3 @@
-// src/components/LineTrendChart.jsx
 "use client";
 import React from "react";
 import {
@@ -10,6 +9,7 @@ import {
   Legend,
   Tooltip,
   CartesianGrid,
+  ReferenceLine, // ←追加
 } from "recharts";
 
 // 描画可能な項目とラベル・色の定義
@@ -24,7 +24,16 @@ export const LABELS = {
 // 四半期コード → 表示文字列マップ
 const QUARTER_LABELS = ["1〜3月", "4〜6月", "7〜9月", "10〜12月"];
 
-export default function LineTrendChart({ data, selectedMetrics }) {
+/**
+ * @param {Array} data - 四半期集計データ
+ * @param {Array} selectedMetrics - 表示する項目名配列
+ * @param {Object} allAverages - { taste_avg: 4.2, ... } の形で全期間平均を渡す
+ */
+export default function LineTrendChart({
+  data,
+  selectedMetrics,
+  allAverages = {},
+}) {
   // "YYYY-QN" → "1〜3月" などに変換
   const formatLabel = (label) => {
     const parts = label.split("-Q");
@@ -32,6 +41,14 @@ export default function LineTrendChart({ data, selectedMetrics }) {
     const q = Number(parts[1]);
     return QUARTER_LABELS[q - 1] || label;
   };
+
+  // 1つだけ選択時
+  const onlyOneSelected = selectedMetrics.length === 1;
+  const metric = onlyOneSelected ? selectedMetrics[0] : null;
+  const avg =
+    onlyOneSelected && metric && allAverages[metric]
+      ? Number(allAverages[metric])
+      : null;
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -62,6 +79,20 @@ export default function LineTrendChart({ data, selectedMetrics }) {
               connectNulls
             />
           ))}
+        {/* 1項目だけ選択時に全期間平均値の参考線を表示 */}
+        {onlyOneSelected && avg && (
+          <ReferenceLine
+            y={avg}
+            stroke={LABELS[metric]?.color || "gray"}
+            strokeDasharray="4 2"
+            label={{
+              value: `全期間平均: ${avg.toFixed(1)}`,
+              position: "right",
+              fill: LABELS[metric]?.color || "gray",
+              fontSize: 12,
+            }}
+          />
+        )}
       </LineChart>
     </ResponsiveContainer>
   );

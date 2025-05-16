@@ -1,9 +1,18 @@
 "use client";
-
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AppBar, Toolbar, Box, Button, Typography } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Box,
+  Button,
+  Typography,
+  Avatar,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import DashboardIcon from "@mui/icons-material/Dashboard";
 
 const navItems = [
   { label: "ダッシュボード", href: "/" },
@@ -16,12 +25,35 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <AppBar component="header" position="static" color="inherit" elevation={1}>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+    <AppBar
+      component="header"
+      position="sticky"
+      elevation={4}
+      sx={{
+        background: "linear-gradient(90deg, #f5f7fa 60%, #e3eeff 100%)",
+        color: "#222",
+        backdropFilter: "blur(6px)",
+        boxShadow: "0 2px 16px 0 rgba(25, 118, 210, 0.10)",
+        borderBottom: "1.5px solid #e3eeff",
+      }}
+    >
+      <Toolbar sx={{ minHeight: 72, px: { xs: 2, md: 6 } }}>
+        {/* ロゴ＋サービス名 */}
+        <DashboardIcon sx={{ color: "primary.main", mr: 1, fontSize: 32 }} />
+        <Typography
+          variant="h6"
+          fontWeight={800}
+          sx={{
+            color: "primary.main",
+            letterSpacing: 1,
+            mr: 4,
+            userSelect: "none",
+          }}
+        >
           GMB レビュー管理
         </Typography>
-        <Box>
+        {/* ナビゲーション */}
+        <Box sx={{ flexGrow: 1, display: "flex", gap: 1 }}>
           {navItems.map(({ label, href }) => {
             const isActive = pathname === href;
             return (
@@ -30,16 +62,22 @@ export default function Header() {
                 component={Link}
                 href={href}
                 sx={{
-                  mx: 1,
+                  fontWeight: 700,
+                  fontSize: "1rem",
                   color: isActive ? "primary.main" : "text.primary",
                   borderBottom: isActive
-                    ? "2px solid"
-                    : "2px solid transparent",
+                    ? "2.5px solid"
+                    : "2.5px solid transparent",
                   borderColor: isActive ? "primary.main" : "transparent",
                   borderRadius: 0,
+                  px: 2,
+                  py: 1,
+                  transition: "all 0.2s",
+                  bgcolor: "transparent",
                   "&:hover": {
-                    bgcolor: "transparent",
-                    borderColor: isActive ? "primary.dark" : "text.secondary",
+                    bgcolor: "#e3eeff88",
+                    borderColor: isActive ? "primary.dark" : "primary.light",
+                    color: "primary.dark",
                   },
                 }}
               >
@@ -47,6 +85,14 @@ export default function Header() {
               </Button>
             );
           })}
+        </Box>
+        {/* 右端：ユーザー/アバター */}
+        <Box sx={{ ml: 2 }}>
+          <Tooltip title="ユーザーメニュー（ダミー）">
+            <IconButton size="large">
+              <Avatar sx={{ bgcolor: "primary.main", color: "#fff" }}>U</Avatar>
+            </IconButton>
+          </Tooltip>
         </Box>
       </Toolbar>
     </AppBar>

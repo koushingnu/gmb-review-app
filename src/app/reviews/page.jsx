@@ -1,4 +1,3 @@
-// src/app/reviews/page.jsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -17,7 +16,13 @@ import {
   Alert,
   Snackbar,
   Alert as MuiAlert,
+  Paper,
+  Divider,
+  Chip,
 } from "@mui/material";
+import StarIcon from "@mui/icons-material/Star";
+import SyncIcon from "@mui/icons-material/Sync";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 // Snackbar 用アラート
 const AlertSnackbar = React.forwardRef(function Alert(props, ref) {
@@ -102,82 +107,133 @@ export default function ReviewsDashboard() {
   const handleSnackbarClose = () => setSnackbarOpen(false);
 
   return (
-    <Box p={4}>
-      <Typography variant="h5" gutterBottom>
-        レビュー ダッシュボード
-      </Typography>
-
-      {/* 期間選択 & 全件表示 */}
-      <DateFilterControls onShowAll={setShowAll} showAll={showAll} />
-
-      {/* 同期 & 再読み込み */}
-      <Box display="flex" alignItems="center" mb={3} gap={2}>
-        <Button
-          variant="contained"
-          onClick={handleSyncClick}
-          disabled={loading}
-        >
-          {loading ? "同期中…" : "手動同期"}
-        </Button>
-        <Button variant="outlined" onClick={loadReviews} disabled={loading}>
-          再読み込み
-        </Button>
-      </Box>
-
-      {/* 通知 */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg,#f5f7fa 0%,#e3eeff 100%)",
+        px: { xs: 1, sm: 4, md: 8 },
+        py: { xs: 2, sm: 4, md: 6 },
+      }}
+    >
+      <Paper
+        elevation={4}
+        sx={{
+          maxWidth: 1200,
+          mx: "auto",
+          mb: 5,
+          mt: 2,
+          p: { xs: 2, sm: 4 },
+          borderRadius: 5,
+          background: "#fff",
+          boxShadow: "0 4px 24px rgba(25, 118, 210, 0.10)",
+        }}
       >
-        <AlertSnackbar onClose={handleSnackbarClose} severity="success">
-          新規レビューを {newCount} 件同期しました
-        </AlertSnackbar>
-      </Snackbar>
-
-      {/* ソート・評価フィルタ */}
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel>ソート</InputLabel>
-          <Select
-            value={sortBy}
-            label="ソート"
-            onChange={(e) => setSortBy(e.target.value)}
+        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+          <StarIcon sx={{ color: "primary.main", fontSize: 32, mr: 1 }} />
+          <Typography
+            variant="h5"
+            fontWeight={900}
+            sx={{ color: "primary.main", letterSpacing: 1 }}
           >
-            <MenuItem value="newest">新着順</MenuItem>
-            <MenuItem value="highest">評価順</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>評価フィルタ</InputLabel>
-          <Select
-            value={filterRating}
-            label="評価フィルタ"
-            onChange={(e) => setFilterRating(e.target.value)}
-          >
-            <MenuItem value="">全て</MenuItem>
-            <MenuItem value="4">4 星以上</MenuItem>
-            <MenuItem value="3">3 星以上</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
-
-      {/* ローディング・エラー をソートの下に移動 */}
-      {loading && (
-        <Box textAlign="center" my={4}>
-          <CircularProgress />
-          <Typography mt={2}>レビュー取得中…</Typography>
+            レビュー ダッシュボード
+          </Typography>
+          <Chip
+            label={showAll ? "全期間" : `${year}年 Q${quarter}`}
+            color={showAll ? "secondary" : "primary"}
+            sx={{ ml: 2, fontWeight: 700 }}
+            size="small"
+            variant={showAll ? "filled" : "outlined"}
+          />
         </Box>
-      )}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
 
-      {/* レビュー一覧 */}
-      {!loading && !error && <ReviewsList reviews={reviews} />}
+        {/* 期間選択 & 全件表示 */}
+        <DateFilterControls onShowAll={setShowAll} showAll={showAll} />
+
+        {/* ソート・評価フィルタ */}
+        <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>ソート</InputLabel>
+            <Select
+              value={sortBy}
+              label="ソート"
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <MenuItem value="newest">新着順</MenuItem>
+              <MenuItem value="highest">評価順</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel>評価フィルタ</InputLabel>
+            <Select
+              value={filterRating}
+              label="評価フィルタ"
+              onChange={(e) => setFilterRating(e.target.value)}
+            >
+              <MenuItem value="">全て</MenuItem>
+              <MenuItem value="4">4 星以上</MenuItem>
+              <MenuItem value="3">3 星以上</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* 同期 & 再読み込み */}
+        <Box display="flex" alignItems="center" gap={2} mb={3}>
+          <Button
+            variant="contained"
+            onClick={handleSyncClick}
+            disabled={loading}
+            startIcon={<SyncIcon />}
+            sx={{
+              fontWeight: 700,
+              borderRadius: 2,
+              px: 3,
+              bgcolor: "primary.main",
+              "&:hover": { bgcolor: "primary.dark" },
+            }}
+          >
+            {loading ? "同期中…" : "手動同期"}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={loadReviews}
+            disabled={loading}
+            startIcon={<RefreshIcon />}
+            sx={{ fontWeight: 700, borderRadius: 2, px: 2 }}
+          >
+            再読み込み
+          </Button>
+        </Box>
+
+        <Divider sx={{ mb: 3 }} />
+
+        {/* 通知 */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={4000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <AlertSnackbar onClose={handleSnackbarClose} severity="success">
+            新規レビューを {newCount} 件同期しました
+          </AlertSnackbar>
+        </Snackbar>
+
+        {/* ローディング・エラー */}
+        {loading && (
+          <Box textAlign="center" my={4}>
+            <CircularProgress />
+            <Typography mt={2}>レビュー取得中…</Typography>
+          </Box>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {/* レビュー一覧 */}
+        {!loading && !error && <ReviewsList reviews={reviews} />}
+      </Paper>
     </Box>
   );
 }
