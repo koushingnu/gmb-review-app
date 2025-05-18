@@ -2,26 +2,44 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import OpenAI from "openai";
 
-// 各四半期のデータを取得するヘルパー
+// 立地は除外
+const LABELS = {
+  taste_avg: "味",
+  service_avg: "接客",
+  price_avg: "価格",
+  location_avg: "店内環境",
+};
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// 小数点1桁四捨五入
+function round1(x) {
+  if (x == null) return null;
+  return Math.round(x * 10) / 10;
+}
+
+// 年月ラベル
+function toLabel(dateStr) {
+  const d = new Date(dateStr);
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  let label = "";
+  if ([1, 2, 3].includes(m)) label = "1〜3月";
+  else if ([4, 5, 6].includes(m)) label = "4〜6月";
+  else if ([7, 8, 9].includes(m)) label = "7〜9月";
+  else label = "10〜12月";
+  return `${y}年${label}`;
+}
+
+// 1四半期分のスコア
 async function fetchQuarterScores(from, to) {
   const { data, error } = await supabaseAdmin.rpc("get_quarterly_scores", {
     from_date: from,
     to_date: to,
   });
   if (error) throw new Error("四半期データ取得失敗: " + error.message);
-  // get_quarterly_scoresは配列で返る想定（1件分のみ）
   return data?.[0] || null;
 }
-
-const LABELS = {
-  taste_avg: "味",
-  service_avg: "接客",
-  price_avg: "価格",
-  location_avg: "店内環境",
-  hygiene_avg: "立地",
-};
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function GET(request) {
   try {
@@ -40,68 +58,53 @@ export async function GET(request) {
     if (!quarter1 || !quarter2)
       throw new Error("2つの四半期データが見つかりません");
 
-    // 2. diff計算（数値増減）
+    // 2. 四捨五入した表示値同士でdiff計算（ズレ対策）
     const diffs = {};
+    const q1Scores = {};
+    const q2Scores = {};
     for (const key of Object.keys(LABELS)) {
+      const q1Rounded = round1(quarter1[key]);
+      const q2Rounded = round1(quarter2[key]);
+      q1Scores[key] = q1Rounded;
+      q2Scores[key] = q2Rounded;
       diffs[key] =
-        quarter2[key] !== null && quarter1[key] !== null
-          ? Number((quarter2[key] - quarter1[key]).toFixed(1))
+        q1Rounded != null && q2Rounded != null
+          ? round1(q2Rounded - q1Rounded)
           : null;
     }
 
-    // 年月表記：2025年1〜3月形式
-    function toLabel(dateStr) {
-      const d = new Date(dateStr);
-      const y = d.getFullYear();
-      const m = d.getMonth() + 1;
-      let label = "";
-      if ([1, 2, 3].includes(m)) label = "1〜3月";
-      else if ([4, 5, 6].includes(m)) label = "4〜6月";
-      else if ([7, 8, 9].includes(m)) label = "7〜9月";
-      else label = "10〜12月";
-      return `${y}年${label}`;
-    }
-
+    // 3. AIプロンプト生成（diff付き、出力指示を厳格に）
     const q1Label = toLabel(from1);
     const q2Label = toLabel(from2);
+    let prompt = `あなたはレストランレビューの経営コンサルAIです。\n`;
+    prompt += `比較する四半期A: ${q1Label}\n比較する四半期B: ${q2Label}\n`;
+    prompt += `各項目のスコア変化は下記の通りです。\n`;
 
-    // 小数点1桁で揃えた表示データ
-    const q1Scores = {};
-    const q2Scores = {};
-    Object.keys(LABELS).forEach((k) => {
-      q1Scores[k] = quarter1[k] != null ? Number(quarter1[k]).toFixed(1) : null;
-      q2Scores[k] = quarter2[k] != null ? Number(quarter2[k]).toFixed(1) : null;
-    });
-
-    // プロンプトをより詳細・実用的に
-    let prompt = `あなたはレストランレビューのプロの経営コンサルタントAIです。\n`;
-    prompt += `下記は2つの四半期（${q1Label}と${q2Label}）の5項目（味・接客・価格・店内環境・立地）の平均スコア比較データです。\n`;
-    prompt += `\n`;
-    prompt += `${q1Label}:\n`;
     Object.entries(LABELS).forEach(([k, label]) => {
-      prompt += `${label}: ${q1Scores[k] ?? "-"}\n`;
+      prompt += `【${label}】 ${q1Scores[k]} → ${q2Scores[k]} (diff: ${diffs[k]})\n`;
     });
-    prompt += `\n${q2Label}:\n`;
-    Object.entries(LABELS).forEach(([k, label]) => {
-      prompt += `${label}: ${q2Scores[k] ?? "-"}\n`;
-    });
-    prompt += `\n`;
-    prompt += `【指示】\n`;
-    prompt += `- スコアが低下した項目については、「課題」として数値変化も明示し、何が原因と考えられるか根拠をデータや一般的傾向をもとに推測し、さらに店舗が実際に取れる具体的な改善案を複数提示してください。\n`;
-    prompt += `- スコアが大きく改善した項目があれば、改善内容・理由・店舗が行ったと推察される施策も含めて詳細に記述してください。\n`;
-    prompt += `- 良好な点や変化が小さい項目は省略してください。\n`;
-    prompt += `- 出力例：\n【味】課題：味が0.3ポイント低下（4.2→3.9）。おそらく新メニューや味付けの変更、調理工程のミスなどが影響した可能性があります。改善案：調理手順の見直し、顧客アンケートを実施し味の感想を直接集める、人気メニューの再評価・復活、などを検討してください。\n【店内環境】改善：店内環境が0.4ポイント改善（3.7→4.1）。清掃や照明、レイアウトの見直し、快適なBGM導入などがプラスに作用した可能性があります。\n`;
 
-    // AI生成
+    prompt += `
+【指示】
+- diffがマイナス（たとえ-0.1でも）の全項目はサマリーに必ず出力。「課題」「原因」「改善案」の3点セット。
+- diffがプラス（+0.2以上）の場合は「改善内容」「施策や要因」のみ（課題や改善案は絶対に書かないでください）。
+- diffが±0.1以内の微小変化は省略して良い。
+- 必ず各項目diff順に（マイナス→プラス）で。
+- 立地は出力不要。
+- 出力例
+【味】課題：味が-0.3ポイント低下（4.8→4.5）。原因：～～。改善案：～～。
+【接客】改善：接客が+0.3ポイント向上（4.1→4.4）。要因：～～。
+`;
+
     const aiResult = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "system", content: prompt }],
-      max_tokens: 2000, // 上限大きめ
-      temperature: 0.5,
+      max_tokens: 2000,
+      temperature: 0.4,
     });
     const ai_summary = aiResult.choices?.[0]?.message?.content?.trim() || "";
 
-    // レスポンス
+    // 4. レスポンス
     return NextResponse.json({
       quarter1: { label: q1Label, ...q1Scores },
       quarter2: { label: q2Label, ...q2Scores },

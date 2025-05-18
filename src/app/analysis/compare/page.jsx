@@ -1,4 +1,3 @@
-// src/app/analysis/compare/page.jsx
 "use client";
 import React, { useState } from "react";
 import {
@@ -39,12 +38,12 @@ function getQuarterDates(year, quarter) {
   return { from, to };
 }
 
+// 立地除外
 const LABELS = {
   taste_avg: "味",
   service_avg: "接客",
   price_avg: "価格",
   location_avg: "店内環境",
-  hygiene_avg: "立地",
 };
 
 export default function QuarterlyComparePage() {
@@ -195,7 +194,7 @@ export default function QuarterlyComparePage() {
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
               スコア比較表
             </Typography>
-            {/* ==== 美しいテーブル表示 ==== */}
+            {/* ==== テーブル表示 ==== */}
             <Paper
               elevation={0}
               sx={{
@@ -319,7 +318,7 @@ export default function QuarterlyComparePage() {
                             }}
                           >
                             {diff > 0 && "+"}
-                            {Number(diff).toFixed(1)}
+                            {diff != null ? Number(diff).toFixed(1) : "-"}
                             <DiffIcon
                               sx={{
                                 fontSize: 18,
