@@ -38,7 +38,6 @@ function getQuarterDates(year, quarter) {
   return { from, to };
 }
 
-// 立地除外
 const LABELS = {
   taste_avg: "味",
   service_avg: "接客",
@@ -54,26 +53,63 @@ export default function QuarterlyComparePage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // ==== AIサマリー ====
+  const [aiSummary, setAISummary] = useState("");
+  const [aiLoading, setAILoading] = useState(false);
+  const [aiError, setAIError] = useState("");
 
   const handleCompare = async () => {
     setLoading(true);
     setError("");
     setResult(null);
+    setAISummary("");
+    setAIError("");
 
     const { from: from1, to: to1 } = getQuarterDates(year1, quarter1);
     const { from: from2, to: to2 } = getQuarterDates(year2, quarter2);
 
     try {
+      // 1. スコア比較取得（既存のAPI）
       const res = await fetch(
         `/api/analysis/quarterly_compare?from1=${from1}&to1=${to1}&from2=${from2}&to2=${to2}`
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "比較データ取得失敗");
       setResult(json);
+
+      // 2. AIサマリー取得（レビュー本文・増減値・期間情報も送信）
+      setAILoading(true);
+      setAISummary("");
+      setAIError("");
+
+      // スコア増減値
+      const deltaTaste = json.diffs.taste_avg ?? 0;
+      const deltaService = json.diffs.service_avg ?? 0;
+      const deltaPrice = json.diffs.price_avg ?? 0;
+      const deltaLocation = json.diffs.location_avg ?? 0;
+
+      const aiParams = new URLSearchParams({
+        from1,
+        to1,
+        from2,
+        to2,
+        delta_taste: String(Number(deltaTaste).toFixed(2)),
+        delta_service: String(Number(deltaService).toFixed(2)),
+        delta_price: String(Number(deltaPrice).toFixed(2)),
+        delta_location: String(Number(deltaLocation).toFixed(2)),
+      });
+
+      const aiRes = await fetch(
+        `/api/reviews/compare-summary?${aiParams.toString()}`
+      );
+      const aiJson = await aiRes.json();
+      if (!aiRes.ok) throw new Error(aiJson.error || "AI分析取得失敗");
+      setAISummary(aiJson.summary);
     } catch (err) {
       setError(err.message || "比較に失敗しました");
     } finally {
       setLoading(false);
+      setAILoading(false);
     }
   };
 
@@ -168,7 +204,7 @@ export default function QuarterlyComparePage() {
           variant="contained"
           color="primary"
           onClick={handleCompare}
-          disabled={loading}
+          disabled={loading || aiLoading}
           sx={{ mt: 1, mb: 2, fontWeight: 800, letterSpacing: 2 }}
         >
           比較・AI分析
@@ -179,7 +215,7 @@ export default function QuarterlyComparePage() {
         {loading && (
           <Box textAlign="center" my={4}>
             <CircularProgress />
-            <Typography mt={2}>AI分析を実行中…</Typography>
+            <Typography mt={2}>データ取得中…</Typography>
           </Box>
         )}
 
@@ -336,28 +372,39 @@ export default function QuarterlyComparePage() {
               </table>
             </Paper>
 
-            {/* AIサマリー */}
+            {/* ==== AIサマリー表示 ==== */}
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
               AI分析サマリー
             </Typography>
-            <Paper
-              elevation={0}
-              sx={{
-                bgcolor: "#f8fafc",
-                p: 3,
-                borderRadius: 3,
-                mb: 3,
-                boxShadow: "0 2px 8px rgba(33,42,90,0.04)",
-              }}
-            >
-              <Typography
-                variant="body1"
-                color="text.primary"
-                sx={{ whiteSpace: "pre-line", fontSize: 17 }}
+            {aiLoading ? (
+              <Box textAlign="center" my={4}>
+                <CircularProgress />
+                <Typography mt={2}>AI分析を実行中…</Typography>
+              </Box>
+            ) : aiError ? (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                AI分析サマリー: {aiError}
+              </Alert>
+            ) : aiSummary ? (
+              <Paper
+                elevation={0}
+                sx={{
+                  bgcolor: "#f8fafc",
+                  p: 3,
+                  borderRadius: 3,
+                  mb: 3,
+                  boxShadow: "0 2px 8px rgba(33,42,90,0.04)",
+                }}
               >
-                {result.ai_summary}
-              </Typography>
-            </Paper>
+                <Typography
+                  variant="body1"
+                  color="text.primary"
+                  sx={{ whiteSpace: "pre-line", fontSize: 17 }}
+                >
+                  {aiSummary}
+                </Typography>
+              </Paper>
+            ) : null}
           </Box>
         )}
       </Paper>
