@@ -9,67 +9,6 @@ import BalanceRadarChart from "@/components/BalanceRadarChart";
 import RatingDistributionChart from "@/components/RatingDistributionChart";
 import { useDateFilter } from "@/lib/DateFilterContext";
 
-// 例：ダミーsummaryデータ（API連携OK、OverallSummaryにはprops渡し可）
-const summary = {
-  score: 85,
-  rating: 4,
-  mascot: "/mascot.png",
-  items: [
-    {
-      title: "基本情報の充実度",
-      count: 7,
-      max: 7,
-      list: [
-        { label: "住所", ok: true },
-        { label: "電話番号", ok: true },
-        { label: "Webサイト", ok: true },
-        { label: "営業時間", ok: true },
-        { label: "ビジネスの説明", ok: true },
-        { label: "カテゴリ・サービスの設定", ok: true },
-        { label: "写真掲載", ok: true },
-      ],
-    },
-    {
-      title: "設備",
-      count: 4,
-      max: 4,
-      list: [
-        { label: "駐車場", ok: true },
-        { label: "WiFi", ok: true },
-        { label: "多目的トイレ", ok: true },
-        { label: "支払いキャッシュレス", ok: true },
-      ],
-    },
-    {
-      title: "更新",
-      count: 0,
-      max: 1,
-      list: [{ label: "主要メンテナンス内容の登録", ok: false }],
-    },
-    {
-      title: "口コミ",
-      count: 2,
-      max: 4,
-      list: [
-        { label: "口コミ数（規定数）", ok: false },
-        { label: "口コミ返信", ok: false },
-        { label: "口コミ高評価", ok: true },
-        { label: "口コミ内容", ok: true },
-      ],
-    },
-    {
-      title: "その他",
-      count: 3,
-      max: 3,
-      list: [
-        { label: "キャンペーン", ok: true },
-        { label: "MFI", ok: true },
-        { label: "コロナ対策", ok: true },
-      ],
-    },
-  ],
-};
-
 export default function GraphPage() {
   const { year, quarter, setYear, setQuarter } = useDateFilter();
   const [data, setData] = useState([]);
@@ -101,7 +40,7 @@ export default function GraphPage() {
       .then((json) => setAllReviews(json || []));
   }, []);
 
-  // 全期間平均値の計算
+  // 全期間平均値の計算（グラフ用）
   const allAverages = useMemo(() => {
     if (!allReviews.length) return {};
 
@@ -121,6 +60,39 @@ export default function GraphPage() {
     return result;
   }, [allReviews]);
 
+  // --- ★ 全期間「すごいUI」点数サマリー生成 ---
+  const summaryData = useMemo(() => {
+    if (!allReviews.length) {
+      return {
+        totalScore: 0,
+        rating: 0,
+        metrics: Object.entries(LABELS).map(([k, v]) => ({
+          label: v.label,
+          score: 0,
+        })),
+      };
+    }
+    // 各項目ごとに平均
+    const metrics = Object.entries(LABELS).map(([avgKey, { label }]) => {
+      const scoreKey = avgKey.replace("_avg", "_score");
+      const vals = allReviews
+        .map((r) => Number(r[scoreKey]))
+        .filter((v) => typeof v === "number" && !isNaN(v) && v > 0);
+      const avg = vals.length
+        ? vals.reduce((a, b) => a + b, 0) / vals.length
+        : 0;
+      return { label, score: avg };
+    });
+    // 総合点＝各項目の平均値の平均（5点満点→100点にスケール）
+    const avgScore =
+      metrics.reduce((sum, m) => sum + m.score, 0) / metrics.length;
+    return {
+      totalScore: Math.round(avgScore * 20), // 100点満点で表示
+      rating: avgScore,
+      metrics,
+    };
+  }, [allReviews]);
+
   return (
     <Box
       sx={{
@@ -130,8 +102,8 @@ export default function GraphPage() {
         py: { xs: 2, sm: 4, md: 6 },
       }}
     >
-      {/* === 総合評価サマリー === */}
-      <OverallSummary summary={summary} />
+      {/* === 総合評価サマリー（全期間）=== */}
+      <OverallSummary summary={summaryData} />
 
       {/* === グラフUIカード === */}
       <Paper
