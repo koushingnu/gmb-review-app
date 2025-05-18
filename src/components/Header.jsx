@@ -18,6 +18,7 @@ const navItems = [
   { label: "ダッシュボード", href: "/" },
   { label: "AI 点数化", href: "/analysis/score" },
   { label: "分析グラフ", href: "/analysis/graphs" },
+  { label: "四半期AI比較", href: "/analysis/compare" }, // ← ここ追加
   { label: "総評", href: "/analysis/summary" },
 ];
 
