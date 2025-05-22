@@ -1,6 +1,32 @@
 // src/app/api/reviews/sync/route.js
 import { google } from "googleapis";
 import { supabase } from "@/lib/supabase";
+import OpenAI from "openai";
+
+// AIプロンプト（精度重視・変更OK）
+const AI_PROMPT = `
+あなたは日本の飲食店レビュー評価AIです。
+以下の日本語レビュー文を厳格に精査し、記載内容がある観点だけに0～5点の整数値をつけてください。
+
+【観点と基準例】
+- 味（taste）：料理のおいしさ・味付け・素材の質など。具体的な称賛や不満、味の詳細描写がある場合のみ点数をつけてください。
+- サービス（service）：接客の丁寧さ・スピード・対応の親切さ。関連する記述がある場合のみ点数をつけてください。
+- 価格（price）：値段に対する満足度やコスパ。価格についての記述がある場合のみ点数をつけてください。
+- 立地（location）：アクセスの良さ、駅からの距離、周辺の便利さ。記載がある場合のみ点数をつけてください。
+- 衛生（hygiene）：店内の清潔さや衛生管理について記載がある場合のみ点数をつけてください。
+
+【出力形式】
+各観点についてレビュー本文に記載がなければ、スコアは必ず0にしてください（スコア0は「その観点について言及なし」を意味します）。
+必ず以下のJSON形式で出力してください。余計な説明は一切不要です。
+
+{"taste": 整数, "service": 整数, "price": 整数, "location": 整数, "hygiene": 整数}
+
+【レビュー本文】
+`;
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function GET() {
   try {
@@ -77,8 +103,6 @@ export async function GET() {
       nextPageToken = body.nextPageToken;
     } while (nextPageToken);
 
-    // ─────────── 新規のみ同期するロジック ───────────
-
     // 7. DB にある既存の review_id を全取得
     const { data: existing, error: existErr } = await supabase
       .from("reviews")
@@ -97,25 +121,48 @@ export async function GET() {
       );
     }
 
-    // ─────────────── 通常の upsert 処理 ───────────────
+    // 10. 新規レビューごとにAIスコアリング＆保存
     const ratingMap = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 };
     let insertedCount = 0;
 
     for (const review of newReviews) {
       const review_id = review.reviewId;
       const star_rating = ratingMap[review.starRating] ?? null;
+      const comment = review.comment || null;
 
-      // reviews テーブルに upsert
+      // --------- AIスコアリング ---------
+      let aiScore = null;
+      if (comment && comment.length > 0) {
+        const prompt = AI_PROMPT + comment;
+        try {
+          const aiRes = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.0,
+          });
+          const jsonStr =
+            aiRes.choices[0].message.content.match(/\{[\s\S]*\}/)?.[0];
+          if (jsonStr) aiScore = JSON.parse(jsonStr);
+        } catch (e) {
+          console.error(`❌ AIスコアリング失敗 for review_id ${review_id}`, e);
+        }
+      }
+      // --------- DB保存（AIスコア付き） ---------
       const { error: revErr } = await supabase.from("reviews").upsert({
         review_id,
         resource_name: review.name,
         location_id: locationId,
         star_rating,
-        comment: review.comment || null,
+        comment,
         create_time: review.createTime,
         update_time: review.updateTime,
         reviewer_display_name: review.reviewer?.displayName || "匿名ユーザー",
         reviewer_profile_photo_url: review.reviewer?.profilePhotoUrl || null,
+        taste_score: aiScore?.taste ?? null,
+        service_score: aiScore?.service ?? null,
+        price_score: aiScore?.price ?? null,
+        location_score: aiScore?.location ?? null,
+        hygiene_score: aiScore?.hygiene ?? null,
       });
       if (revErr) {
         console.error(`❌ Review upsert failed for ${review_id}`, revErr);
@@ -136,10 +183,10 @@ export async function GET() {
       }
     }
 
-    // 12. レスポンス返却
+    // 11. レスポンス返却
     return new Response(
       JSON.stringify({
-        message: `${insertedCount} 件の新規レビューを同期しました`,
+        message: `${insertedCount} 件の新規レビューを同期（AIスコア付き）しました`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

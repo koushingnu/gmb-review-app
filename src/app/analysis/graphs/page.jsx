@@ -1,23 +1,43 @@
-// src/app/analysis/graphs/page.jsx
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
 import OverallSummary from "@/components/OverallSummary";
-import { Box, Typography, Paper, Divider } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  Stack,
+} from "@mui/material";
 import LineTrendChart, { LABELS } from "@/components/LineTrendChart";
 import MetricSelector from "@/components/MetricSelector";
 import BalanceRadarChart from "@/components/BalanceRadarChart";
 import RatingDistributionChart from "@/components/RatingDistributionChart";
-import { useDateFilter } from "@/lib/DateFilterContext";
+
+// 現在の年・四半期を自動計算
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth() + 1;
+const getQuarter = (month) => Math.floor((month - 1) / 3) + 1;
+const currentQuarter = getQuarter(currentMonth);
 
 export default function GraphPage() {
-  const { year, quarter, setYear, setQuarter } = useDateFilter();
+  // 年・四半期選択肢
+  const [year, setYear] = useState(currentYear);
+  const [quarter, setQuarter] = useState(currentQuarter);
+  // 全期間表示フラグ
+  const [allPeriod, setAllPeriod] = useState(false);
+
   const [data, setData] = useState([]);
   const [allReviews, setAllReviews] = useState([]);
   const [comparisonMode, setComparisonMode] = useState(false);
-  const [compareYear, setCompareYear] = useState(year - 1);
-  const [compareQuarter, setCompareQuarter] = useState(quarter);
+  const [compareYear, setCompareYear] = useState(currentYear - 1);
+  const [compareQuarter, setCompareQuarter] = useState(currentQuarter);
 
-  // トレンド表示する項目を初期化（全部ON）
   const allKeys = Object.keys(LABELS);
   const [selectedMetrics, setSelectedMetrics] = useState(allKeys);
   const toggleMetric = (key) => {
@@ -26,27 +46,30 @@ export default function GraphPage() {
     );
   };
 
-  // 四半期データ取得
+  // 年・四半期or全期間の切替でデータ取得
   useEffect(() => {
-    fetch(`/api/analysis/quarterly?year=${year}&quarter=${quarter}`)
-      .then((res) => res.json())
-      .then((json) => setData(json || []));
-  }, [year, quarter]);
+    if (allPeriod) {
+      // 全期間の場合
+      fetch(`/api/analysis/quarterly`)
+        .then((res) => res.json())
+        .then((json) => setData(Array.isArray(json) ? json : []));
+    } else {
+      fetch(`/api/analysis/quarterly?year=${year}&quarter=${quarter}`)
+        .then((res) => res.json())
+        .then((json) => setData(Array.isArray(json) ? json : []));
+    }
+  }, [year, quarter, allPeriod]);
 
-  // 全レビュー取得
   useEffect(() => {
     fetch("/api/reviews?all=1")
       .then((res) => res.json())
-      .then((json) => setAllReviews(json || []));
+      .then((json) => setAllReviews(Array.isArray(json) ? json : []));
   }, []);
 
-  // 全期間平均値の計算（グラフ用）
   const allAverages = useMemo(() => {
     if (!allReviews.length) return {};
-
     const keys = Object.keys(LABELS);
     const result = {};
-
     keys.forEach((avgKey) => {
       const scoreKey = avgKey.replace("_avg", "_score");
       const vals = allReviews
@@ -56,11 +79,9 @@ export default function GraphPage() {
         ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)
         : null;
     });
-
     return result;
   }, [allReviews]);
 
-  // --- ★ 全期間「すごいUI」点数サマリー生成 ---
   const summaryData = useMemo(() => {
     if (!allReviews.length) {
       return {
@@ -72,7 +93,6 @@ export default function GraphPage() {
         })),
       };
     }
-    // 各項目ごとに平均
     const metrics = Object.entries(LABELS).map(([avgKey, { label }]) => {
       const scoreKey = avgKey.replace("_avg", "_score");
       const vals = allReviews
@@ -83,11 +103,10 @@ export default function GraphPage() {
         : 0;
       return { label, score: avg };
     });
-    // 総合点＝各項目の平均値の平均（5点満点→100点にスケール）
     const avgScore =
       metrics.reduce((sum, m) => sum + m.score, 0) / metrics.length;
     return {
-      totalScore: Math.round(avgScore * 20), // 100点満点で表示
+      totalScore: Math.round(avgScore * 20),
       rating: avgScore,
       metrics,
     };
@@ -102,10 +121,8 @@ export default function GraphPage() {
         py: { xs: 2, sm: 4, md: 6 },
       }}
     >
-      {/* === 総合評価サマリー（全期間）=== */}
       <OverallSummary summary={summaryData} />
 
-      {/* === グラフUIカード === */}
       <Paper
         elevation={4}
         sx={{
@@ -120,14 +137,51 @@ export default function GraphPage() {
           boxShadow: "0 4px 24px rgba(25, 118, 210, 0.10)",
         }}
       >
-        <Typography
-          variant="h5"
-          fontWeight={800}
-          color="primary.main"
-          sx={{ mb: 2, letterSpacing: 1 }}
-        >
-          四半期スコア分析・グラフ
-        </Typography>
+        {/* 年・四半期＋全期間ボタン */}
+        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+          <FormControl sx={{ minWidth: 120 }} disabled={allPeriod}>
+            <InputLabel>年</InputLabel>
+            <Select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              label="年"
+            >
+              {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
+                <MenuItem value={y} key={y}>
+                  {y}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl sx={{ minWidth: 120 }} disabled={allPeriod}>
+            <InputLabel>四半期</InputLabel>
+            <Select
+              value={quarter}
+              onChange={(e) => setQuarter(Number(e.target.value))}
+              label="四半期"
+            >
+              {[1, 2, 3, 4].map((q) => (
+                <MenuItem value={q} key={q}>
+                  {q} - {q * 3}月
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button
+            variant={allPeriod ? "contained" : "outlined"}
+            color="primary"
+            onClick={() => setAllPeriod((prev) => !prev)}
+            sx={{
+              height: 48,
+              px: 3,
+              fontWeight: 700,
+              ml: 2,
+              bgcolor: allPeriod ? "primary.main" : "#fff",
+            }}
+          >
+            {allPeriod ? "全期間表示中" : "全期間"}
+          </Button>
+        </Stack>
 
         {/* MetricSelector */}
         <MetricSelector selected={selectedMetrics} onToggle={toggleMetric} />
@@ -143,7 +197,7 @@ export default function GraphPage() {
           />
         </Box>
 
-        {/* レーダーチャート＋評価分布を横並び */}
+        {/* レーダーチャート＋評価分布 */}
         <Box
           sx={{
             display: "flex",

@@ -16,10 +16,9 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 
 const navItems = [
   { label: "ダッシュボード", href: "/" },
-  { label: "AI 点数化", href: "/analysis/score" },
   { label: "分析グラフ", href: "/analysis/graphs" },
-  { label: "四半期AI比較", href: "/analysis/compare" }, // ← ここ追加
   { label: "総評", href: "/analysis/summary" },
+  { label: "四半期AI比較", href: "/analysis/compare" }, // ← ここ追加
 ];
 
 export default function Header() {
@@ -87,6 +86,27 @@ export default function Header() {
             );
           })}
         </Box>
+        {/* ここに管理者ボタン個別設置も可能 */}
+        <Button
+          component={Link}
+          href="/admin"
+          variant="outlined"
+          color="primary"
+          sx={{
+            ml: 2,
+            fontWeight: 700,
+            borderRadius: 2,
+            px: 2,
+            py: 1,
+            bgcolor: "#fff",
+            border: "1.5px solid #1976d2",
+            "&:hover": {
+              bgcolor: "#e3eeff",
+            },
+          }}
+        >
+          管理者
+        </Button>
         {/* 右端：ユーザー/アバター */}
         <Box sx={{ ml: 2 }}>
           <Tooltip title="ユーザーメニュー（ダミー）">
