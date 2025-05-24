@@ -201,6 +201,22 @@ export async function GET() {
     repliesMap[row.review_id] = row;
   }
 
+  // === 追加：Google側に無いレビューIDをDBから削除 ===
+  const googleReviewIdSet = new Set(allReviews.map((r) => r.reviewId));
+  for (const review_id in existingMap) {
+    if (!googleReviewIdSet.has(review_id)) {
+      const { error: delErr } = await supabase
+        .from("reviews")
+        .delete()
+        .eq("review_id", review_id);
+      if (delErr) {
+        console.error(`Review delete error: review_id=${review_id}`, delErr);
+      } else {
+        console.log(`[review delete] review_id=${review_id}`);
+      }
+    }
+  }
+
   // 7. 差分チェック&DB upsert
   t = timer("差分チェック・AI・DB upsert");
   let aiTime = 0;
