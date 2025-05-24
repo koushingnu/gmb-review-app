@@ -1,32 +1,53 @@
-// src/app/api/reviews/route.js
-import { supabase } from "@/lib/supabase"; // エイリアスを使う場合
+import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
-export async function GET() {
-  // DB からレビューを取得
-  const { data: reviews, error } = await supabase
-    .from("reviews")
-    .select(
-      `
-      review_id,
-      reviewer_display_name,
-      star_rating,
-      comment,
-      create_time
-    `
-    )
-    .order("create_time", { ascending: false });
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
 
-  if (error) {
-    console.error("❌ Fetch reviews error:", error);
-    return new Response(
-      JSON.stringify({ message: "レビュー取得に失敗しました", reviews: [] }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    const sortBy = searchParams.get("sortBy") ?? "newest";
+    const filterRating = searchParams.get("filterRating");
+
+    // review_repliesを「update_time降順」でJOIN
+    let query = supabase
+      .from("reviews")
+      .select("*, review_replies(comment, update_time)")
+      .order("update_time", {
+        foreignTable: "review_replies",
+        ascending: false,
+      }); // ← 追加
+
+    if (from) query = query.gte("create_time", from);
+    if (to) query = query.lte("create_time", to);
+    if (filterRating) query = query.gte("star_rating", Number(filterRating));
+
+    if (sortBy === "highest") {
+      query = query.order("star_rating", { ascending: false });
+    } else {
+      query = query.order("create_time", { ascending: false });
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // 最新の返信が先頭になる
+    const reviews = data.map((r) => ({
+      ...r,
+      reply: r.review_replies?.length ? r.review_replies[0] : null,
+    }));
+
+    return NextResponse.json({ reviews });
+  } catch (err) {
+    console.error("❌ Fetch reviews error:", err);
+    return NextResponse.json(
+      {
+        message: "レビュー取得に失敗しました",
+        error: err.message,
+        reviews: [],
+      },
+      { status: 500 }
     );
   }
-
-  // フロント用に配列を返却
-  return new Response(JSON.stringify({ reviews }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }
