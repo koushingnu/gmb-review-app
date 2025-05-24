@@ -56,7 +56,7 @@ export default function SummaryPage() {
   useEffect(() => {
     fetch("/api/reviews?all=1")
       .then((res) => res.json())
-      .then((json) => setAllReviews(json || []));
+      .then((json) => setAllReviews(json.reviews || []));
   }, []);
 
   // 平均値算出

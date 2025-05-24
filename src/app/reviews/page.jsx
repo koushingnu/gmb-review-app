@@ -52,6 +52,28 @@ export default function ReviewsDashboard() {
     return `${year}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
   }, [year, quarter]);
 
+  // Googleトークンチェック＆更新（初期マウント時）
+  useEffect(() => {
+    async function checkGoogleToken() {
+      try {
+        const res = await fetch("/api/google/token-check");
+        if (!res.ok) {
+          throw new Error(
+            "Googleトークン認証エラー。再ログインが必要かもしれません。"
+          );
+        }
+        const json = await res.json();
+        console.log("アクセストークン有効:", json.access_token);
+        // 必要ならここでアクセストークンを状態に保存することも可能
+      } catch (e) {
+        console.error(e);
+        setError(e.message);
+        // ログアウト誘導や再認証UIをここで出す選択肢もあり
+      }
+    }
+    checkGoogleToken();
+  }, []);
+
   // レビュー取得
   const loadReviews = async () => {
     setLoading(true);
@@ -77,7 +99,7 @@ export default function ReviewsDashboard() {
     }
   };
 
-  // エフェクト：フィルタ変更時のみ実行
+  // エフェクト：フィルタ・期間・ソート・全件切り替え時に再取得
   useEffect(() => {
     loadReviews();
   }, [fromDate, toDate, sortBy, filterRating, showAll]);
@@ -232,7 +254,9 @@ export default function ReviewsDashboard() {
         )}
 
         {/* レビュー一覧 */}
-        {!loading && !error && <ReviewsList reviews={reviews} />}
+        {!loading && !error && (
+          <ReviewsList reviews={reviews} onReload={loadReviews} />
+        )}
       </Paper>
     </Box>
   );

@@ -63,7 +63,7 @@ export default function GraphPage() {
   useEffect(() => {
     fetch("/api/reviews?all=1")
       .then((res) => res.json())
-      .then((json) => setAllReviews(Array.isArray(json) ? json : []));
+      .then((json) => setAllReviews(json.reviews || []));
   }, []);
 
   const allAverages = useMemo(() => {
@@ -227,9 +227,23 @@ export default function GraphPage() {
               mb={1}
             >
               項目別バランス（レーダー）
+              {allPeriod && "（全期間平均）"}
             </Typography>
             <BalanceRadarChart
-              data={data}
+              data={
+                allPeriod
+                  ? // 全期間なら平均を各指標で構成した1件配列で渡す
+                    [
+                      Object.entries(LABELS).reduce(
+                        (acc, [avgKey, { label }]) => {
+                          acc[label] = Number(allAverages[avgKey]) || 0;
+                          return acc;
+                        },
+                        {}
+                      ),
+                    ]
+                  : data
+              }
               mainYear={year}
               mainQuarter={quarter}
               compareMode={comparisonMode}

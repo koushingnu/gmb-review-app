@@ -11,6 +11,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET() {
+  // ここは現状そのまま（崩さず）
   const { data: comments, error } = await supabase
     .from("reviews")
     .select("review_id, reviewer_display_name, comment, create_time")
