@@ -48,10 +48,10 @@ const getRatingColor = (theme: Theme, rating: number): string => {
   return theme.palette.error.main;
 };
 
-export default function ReviewCard({
+export function ReviewCard({
   review,
   onReply,
-}: ReviewCardProps): JSX.Element {
+}: ReviewCardProps): React.ReactElement {
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
