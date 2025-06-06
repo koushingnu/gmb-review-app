@@ -118,15 +118,14 @@ export default function QuarterlyComparePage() {
       sx={{
         minHeight: "100vh",
         background: "linear-gradient(135deg,#f5f7fa 0%,#e3eeff 100%)",
-        px: { xs: 1, sm: 4, md: 8 },
-        py: { xs: 2, sm: 4, md: 6 },
+        pl: { xs: 2, sm: 3 },
+        py: { xs: 2, sm: 4 },
       }}
     >
       <Paper
         elevation={4}
         sx={{
-          maxWidth: 900,
-          mx: "auto",
+          width: "100%",
           mb: 5,
           p: { xs: 2, sm: 4 },
           borderRadius: 5,

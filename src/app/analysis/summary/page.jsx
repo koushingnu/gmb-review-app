@@ -108,12 +108,67 @@ export default function SummaryPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg,#f5f7fa 0%,#e3eeff 100%)",
-        px: { xs: 1, sm: 4, md: 8 },
-        py: { xs: 2, sm: 4, md: 6 },
+        background:
+          "linear-gradient(135deg, rgba(56, 189, 248, 0.03) 0%, rgba(99, 102, 241, 0.03) 100%)",
+        pl: { xs: 2, sm: 3 },
+        py: 4,
       }}
     >
-      {/* スコアも連動表示 */}
+      {/* ヘッダー */}
+      <Box
+        sx={{
+          mb: 4,
+          background: "linear-gradient(135deg, #0ea5e9 0%, #4f46e5 100%)",
+          borderRadius: "20px",
+          p: { xs: 2.5, sm: 3 },
+          color: "white",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 20px 40px -12px rgba(14, 165, 233, 0.25)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          backdropFilter: "blur(10px)",
+          width: "100%",
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "50%",
+            height: "100%",
+            background:
+              "linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)",
+            transform: "skewX(-20deg) translateX(50%)",
+            filter: "blur(2px)",
+          }}
+        />
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 800,
+            letterSpacing: "-0.02em",
+            color: "#fff",
+            textShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+            fontFamily: '"Inter", "Noto Sans JP", sans-serif',
+            mb: 1,
+          }}
+        >
+          レビュー分析サマリー
+        </Typography>
+        <Typography
+          sx={{
+            color: "rgba(255, 255, 255, 0.8)",
+            fontWeight: 500,
+            fontSize: "1.1rem",
+      }}
+    >
+          お客様の声を総合的に分析し、重要なインサイトを提供します
+        </Typography>
+      </Box>
+
+      {/* スコアサマリー */}
+      <Box sx={{ width: "100%", mb: 4 }}>
       <OverallSummary
         summary={{
           totalScore: (() => {
@@ -121,7 +176,9 @@ export default function SummaryPage() {
               .map(Number)
               .filter((v) => !isNaN(v));
             return vals.length
-              ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 20)
+                ? Math.round(
+                    (vals.reduce((a, b) => a + b, 0) / vals.length) * 20
+                  )
               : 0;
           })(),
           rating: (() => {
@@ -138,39 +195,75 @@ export default function SummaryPage() {
           })),
         }}
       />
+      </Box>
 
+      {/* メインコンテンツ */}
       <Paper
-        elevation={4}
+        elevation={0}
         sx={{
-          maxWidth: 900,
-          mx: "auto",
-          mb: 5,
-          p: { xs: 2, sm: 4 },
-          borderRadius: 5,
-          background: "#fff",
-          boxShadow: "0 4px 24px rgba(25, 118, 210, 0.10)",
+          width: "100%",
+          borderRadius: "16px",
+          overflow: "hidden",
+          background: "white",
+          border: "1px solid rgba(99, 102, 241, 0.1)",
+          boxShadow: "0 4px 24px rgba(0, 0, 0, 0.05)",
         }}
       >
+        {/* タブ */}
+        <Box sx={{ borderBottom: "1px solid rgba(99, 102, 241, 0.1)" }}>
         <Tabs
           value={tab}
           onChange={(_, v) => setTab(v)}
-          indicatorColor="primary"
-          textColor="primary"
-          sx={{ mb: 2 }}
+            sx={{
+              px: { xs: 2, sm: 3 },
+              "& .MuiTab-root": {
+                textTransform: "none",
+                fontSize: "1rem",
+                fontWeight: 600,
+                color: "#64748b",
+                "&.Mui-selected": {
+                  color: "#0ea5e9",
+                },
+              },
+              "& .MuiTabs-indicator": {
+                backgroundColor: "#0ea5e9",
+              },
+            }}
         >
           <Tab label="全期間サマリー" />
           <Tab label="四半期ごとサマリー" />
         </Tabs>
+        </Box>
 
-        {/* --- 四半期モードなら期間選択 --- */}
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          {/* 四半期選択 */}
         {tab === 1 && (
           <Box
-            sx={{ display: "flex", gap: 2, mb: 2, mt: 1, alignItems: "center" }}
+              sx={{
+                display: "flex",
+                gap: 2,
+                mb: 3,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
           >
-            <FormControl size="small">
-              <InputLabel id="year-label">年</InputLabel>
+              <FormControl
+                size="small"
+                sx={{
+                  minWidth: 120,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "10px",
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#0ea5e9",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#0ea5e9",
+                    },
+                  },
+                }}
+              >
+                <InputLabel>年</InputLabel>
               <Select
-                labelId="year-label"
                 value={year}
                 label="年"
                 onChange={(e) => setYear(Number(e.target.value))}
@@ -180,10 +273,23 @@ export default function SummaryPage() {
                 ))}
               </Select>
             </FormControl>
-            <FormControl size="small">
-              <InputLabel id="quarter-label">四半期</InputLabel>
+              <FormControl
+                size="small"
+                sx={{
+                  minWidth: 120,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "10px",
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#0ea5e9",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#0ea5e9",
+                    },
+                  },
+                }}
+              >
+                <InputLabel>四半期</InputLabel>
               <Select
-                labelId="quarter-label"
                 value={quarter}
                 label="四半期"
                 onChange={(e) => setQuarter(Number(e.target.value))}
@@ -198,57 +304,75 @@ export default function SummaryPage() {
           </Box>
         )}
 
-        <Divider sx={{ mb: 2 }} />
+          {/* エラー表示 */}
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: "12px",
+                boxShadow: "0 4px 24px rgba(0, 0, 0, 0.05)",
+              }}
+            >
+              {error}
+            </Alert>
+          )}
 
+          {/* ローディング */}
         {loading ? (
-          <Box textAlign="center" my={6}>
-            <CircularProgress />
-            <Typography mt={2}>総評を生成中…</Typography>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                py: 8,
+              }}
+            >
+              <CircularProgress sx={{ color: "#0ea5e9" }} />
           </Box>
-        ) : error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            エラー: {error}
-          </Alert>
         ) : (
+            /* サマリーセクション */
           <Box>
-            {sections.length ? (
-              sections.map(({ title, content }) => (
-                <Paper
-                  key={title}
-                  elevation={0}
+              {sections.map((section, i) => (
+                <Box
+                  key={i}
                   sx={{
-                    bgcolor: "#f8fafc",
-                    p: 3,
-                    borderRadius: 3,
                     mb: 3,
-                    boxShadow: "0 2px 8px rgba(33,42,90,0.04)",
+                    p: 3,
+                    borderRadius: "12px",
+                    border: "1px solid rgba(99, 102, 241, 0.1)",
+                    background: "rgba(99, 102, 241, 0.02)",
+                    "&:hover": {
+                      background: "rgba(99, 102, 241, 0.05)",
+                      transform: "translateY(-2px)",
+                      transition: "all 0.3s ease",
+                    },
                   }}
                 >
                   <Typography
-                    variant="subtitle1"
-                    color="primary.main"
-                    fontWeight={800}
-                    gutterBottom
-                    sx={{ letterSpacing: 1 }}
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "1.1rem",
+                      color: "#1e293b",
+                      mb: 2,
+                    }}
                   >
-                    {title}
+                    {section.title}
                   </Typography>
                   <Typography
-                    variant="body1"
-                    color="text.primary"
-                    sx={{ whiteSpace: "pre-line", fontSize: 17 }}
+                    sx={{
+                      color: "#334155",
+                      lineHeight: 1.8,
+                      whiteSpace: "pre-wrap",
+                    }}
                   >
-                    {content}
+                    {section.content}
                   </Typography>
-                </Paper>
-              ))
-            ) : (
-              <Typography color="text.secondary">
-                AI総評がありません。
-              </Typography>
+                </Box>
+              ))}
+            </Box>
             )}
           </Box>
-        )}
       </Paper>
     </Box>
   );

@@ -21,12 +21,23 @@ export async function GET(request) {
 
     if (from) query = query.gte("create_time", from);
     if (to) query = query.lte("create_time", to);
-    if (filterRating) query = query.gte("star_rating", Number(filterRating));
+    if (filterRating) query = query.eq("star_rating", Number(filterRating));
 
-    if (sortBy === "highest") {
+    // ソート条件の適用
+    switch (sortBy) {
+      case "rating_high":
       query = query.order("star_rating", { ascending: false });
-    } else {
+        break;
+      case "rating_low":
+        query = query.order("star_rating", { ascending: true });
+        break;
+      case "oldest":
+        query = query.order("create_time", { ascending: true });
+        break;
+      case "newest":
+      default:
       query = query.order("create_time", { ascending: false });
+        break;
     }
 
     const { data, error } = await query;

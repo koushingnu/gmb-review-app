@@ -117,18 +117,18 @@ export default function GraphPage() {
       sx={{
         minHeight: "100vh",
         background: "linear-gradient(135deg,#f5f7fa 0%,#e3eeff 100%)",
-        px: { xs: 1, sm: 4, md: 8 },
-        py: { xs: 2, sm: 4, md: 6 },
+        pl: { xs: 2, sm: 3 },
+        py: { xs: 2, sm: 4 },
       }}
     >
+      <Box sx={{ width: "100%" }}>
       <OverallSummary summary={summaryData} />
+      </Box>
 
       <Paper
         elevation={4}
         sx={{
           width: "100%",
-          maxWidth: 1200,
-          mx: "auto",
           mt: 2,
           mb: 5,
           p: { xs: 2, sm: 4 },
