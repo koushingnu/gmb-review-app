@@ -26,7 +26,7 @@ const QUARTER_LABELS = {
   4: "10〜12月",
 };
 
-export default function BalanceRadarChart({
+export function BalanceRadarChart({
   data,
   mainYear,
   mainQuarter,

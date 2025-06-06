@@ -11,7 +11,7 @@ import {
   LabelList,
 } from "recharts";
 
-export default function RatingDistributionChart() {
+export function RatingDistributionChart({ data }) {
   const [dist, setDist] = useState([]);
 
   useEffect(() => {

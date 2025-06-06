@@ -17,10 +17,11 @@ import ReplyIcon from "@mui/icons-material/Reply";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { formatDistanceToNow } from "date-fns";
 import { ja } from "date-fns/locale";
+import { formatDate } from "@/lib/utils/date";
 
 interface Reviewer {
   displayName: string;
-  profilePhotoUrl?: string;
+  profilePhotoUrl: string;
 }
 
 interface ReviewCardProps {
@@ -31,7 +32,7 @@ interface ReviewCardProps {
     reviewer?: Reviewer;
     replied?: boolean;
   };
-  onReply?: (reviewId: string) => void;
+  onReply?: () => void;
 }
 
 const MotionCard = motion(Card);
@@ -55,13 +56,6 @@ export default function ReviewCard({
     triggerOnce: true,
     threshold: 0.1,
   });
-
-  const formatDate = (dateString: string): string => {
-    return formatDistanceToNow(new Date(dateString), {
-      locale: ja,
-      addSuffix: true,
-    });
-  };
 
   return (
     <MotionCard
@@ -151,11 +145,7 @@ export default function ReviewCard({
             )}
           </Box>
           <Tooltip title="返信する">
-            <IconButton
-              color="primary"
-              size="small"
-              onClick={() => onReply?.("review-id")}
-            >
+            <IconButton color="primary" size="small" onClick={onReply}>
               <ReplyIcon />
             </IconButton>
           </Tooltip>

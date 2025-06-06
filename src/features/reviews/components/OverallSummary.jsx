@@ -10,7 +10,7 @@ import {
   Rating,
 } from "@mui/material";
 
-export default function OverallSummary({ summary }) {
+export function OverallSummary({ summary }) {
   // ダミー値で安全にフォールバック
   const s = summary || {
     totalScore: 0,
