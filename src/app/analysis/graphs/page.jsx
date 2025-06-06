@@ -1,10 +1,13 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import OverallSummary from "@/components/OverallSummary";
+import { Box, Container, Typography, Paper } from "@mui/material";
+import { OverallSummary } from "@/features/reviews/components/OverallSummary";
+import { LineTrendChart } from "@/components/charts/LineTrendChart";
+import { MetricSelector } from "@/components/common/inputs/MetricSelector";
+import { BalanceRadarChart } from "@/components/charts/BalanceRadarChart";
+import { RatingDistributionChart } from "@/components/charts/RatingDistributionChart";
+import { useDateFilter } from "@/lib/DateFilterContext";
 import {
-  Box,
-  Typography,
-  Paper,
   Divider,
   FormControl,
   InputLabel,
@@ -13,10 +16,6 @@ import {
   Button,
   Stack,
 } from "@mui/material";
-import LineTrendChart, { LABELS } from "@/components/LineTrendChart";
-import MetricSelector from "@/components/MetricSelector";
-import BalanceRadarChart from "@/components/BalanceRadarChart";
-import RatingDistributionChart from "@/components/RatingDistributionChart";
 
 // 現在の年・四半期を自動計算
 const now = new Date();
@@ -122,7 +121,7 @@ export default function GraphPage() {
       }}
     >
       <Box sx={{ width: "100%" }}>
-      <OverallSummary summary={summaryData} />
+        <OverallSummary summary={summaryData} />
       </Box>
 
       <Paper

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import ReviewsList from "@/components/ReviewsList"; // 既存レビューリスト
+import { ReviewsList } from "@/features/reviews/components/list/ReviewsList";
 import {
   Box,
   TextField,
