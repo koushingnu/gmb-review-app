@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Box, Container, Typography, Paper } from "@mui/material";
 import { OverallSummary } from "@/features/reviews/components/OverallSummary";
-import { LineTrendChart } from "@/components/charts/LineTrendChart";
+import { LineTrendChart, LABELS } from "@/components/charts/LineTrendChart";
 import { MetricSelector } from "@/components/common/inputs/MetricSelector";
 import { BalanceRadarChart } from "@/components/charts/BalanceRadarChart";
 import { RatingDistributionChart } from "@/components/charts/RatingDistributionChart";
