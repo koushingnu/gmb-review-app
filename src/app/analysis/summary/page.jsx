@@ -16,10 +16,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Container,
+  Grid,
 } from "@mui/material";
-import OverallSummary from "@/components/OverallSummary";
+import { OverallSummary } from "@/features/reviews/components/OverallSummary";
+import { LineTrendChart, LABELS } from "@/components/charts/LineTrendChart";
 import { useDateFilter } from "@/lib/DateFilterContext";
-import { LABELS } from "@/components/LineTrendChart";
 
 // summaryTextを「【観点】」ごとに分割するヘルパー
 function parseSections(summaryText) {
@@ -161,40 +163,40 @@ export default function SummaryPage() {
             color: "rgba(255, 255, 255, 0.8)",
             fontWeight: 500,
             fontSize: "1.1rem",
-      }}
-    >
+          }}
+        >
           お客様の声を総合的に分析し、重要なインサイトを提供します
         </Typography>
       </Box>
 
       {/* スコアサマリー */}
       <Box sx={{ width: "100%", mb: 4 }}>
-      <OverallSummary
-        summary={{
-          totalScore: (() => {
-            const vals = Object.values(allAverages)
-              .map(Number)
-              .filter((v) => !isNaN(v));
-            return vals.length
+        <OverallSummary
+          summary={{
+            totalScore: (() => {
+              const vals = Object.values(allAverages)
+                .map(Number)
+                .filter((v) => !isNaN(v));
+              return vals.length
                 ? Math.round(
                     (vals.reduce((a, b) => a + b, 0) / vals.length) * 20
                   )
-              : 0;
-          })(),
-          rating: (() => {
-            const vals = Object.values(allAverages)
-              .map(Number)
-              .filter((v) => !isNaN(v));
-            return vals.length
-              ? vals.reduce((a, b) => a + b, 0) / vals.length
-              : 0;
-          })(),
-          metrics: Object.entries(LABELS).map(([k, v]) => ({
-            label: v.label,
-            score: Number(allAverages[k]) || 0,
-          })),
-        }}
-      />
+                : 0;
+            })(),
+            rating: (() => {
+              const vals = Object.values(allAverages)
+                .map(Number)
+                .filter((v) => !isNaN(v));
+              return vals.length
+                ? vals.reduce((a, b) => a + b, 0) / vals.length
+                : 0;
+            })(),
+            metrics: Object.entries(LABELS).map(([k, v]) => ({
+              label: v.label,
+              score: Number(allAverages[k]) || 0,
+            })),
+          }}
+        />
       </Box>
 
       {/* メインコンテンツ */}
@@ -211,9 +213,9 @@ export default function SummaryPage() {
       >
         {/* タブ */}
         <Box sx={{ borderBottom: "1px solid rgba(99, 102, 241, 0.1)" }}>
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
             sx={{
               px: { xs: 2, sm: 3 },
               "& .MuiTab-root": {
@@ -229,16 +231,16 @@ export default function SummaryPage() {
                 backgroundColor: "#0ea5e9",
               },
             }}
-        >
-          <Tab label="全期間サマリー" />
-          <Tab label="四半期ごとサマリー" />
-        </Tabs>
+          >
+            <Tab label="全期間サマリー" />
+            <Tab label="四半期ごとサマリー" />
+          </Tabs>
         </Box>
 
         <Box sx={{ p: { xs: 2, sm: 3 } }}>
           {/* 四半期選択 */}
-        {tab === 1 && (
-          <Box
+          {tab === 1 && (
+            <Box
               sx={{
                 display: "flex",
                 gap: 2,
@@ -246,7 +248,7 @@ export default function SummaryPage() {
                 flexWrap: "wrap",
                 alignItems: "center",
               }}
-          >
+            >
               <FormControl
                 size="small"
                 sx={{
@@ -263,16 +265,16 @@ export default function SummaryPage() {
                 }}
               >
                 <InputLabel>年</InputLabel>
-              <Select
-                value={year}
-                label="年"
-                onChange={(e) => setYear(Number(e.target.value))}
-              >
-                {yearOptions.map((y) => (
-                  <MenuItem key={y} value={y}>{`${y}年`}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                <Select
+                  value={year}
+                  label="年"
+                  onChange={(e) => setYear(Number(e.target.value))}
+                >
+                  {yearOptions.map((y) => (
+                    <MenuItem key={y} value={y}>{`${y}年`}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <FormControl
                 size="small"
                 sx={{
@@ -289,20 +291,20 @@ export default function SummaryPage() {
                 }}
               >
                 <InputLabel>四半期</InputLabel>
-              <Select
-                value={quarter}
-                label="四半期"
-                onChange={(e) => setQuarter(Number(e.target.value))}
-              >
-                {quarterOptions.map((q) => (
-                  <MenuItem key={q.value} value={q.value}>
-                    {q.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        )}
+                <Select
+                  value={quarter}
+                  label="四半期"
+                  onChange={(e) => setQuarter(Number(e.target.value))}
+                >
+                  {quarterOptions.map((q) => (
+                    <MenuItem key={q.value} value={q.value}>
+                      {q.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
 
           {/* エラー表示 */}
           {error && (
@@ -319,7 +321,7 @@ export default function SummaryPage() {
           )}
 
           {/* ローディング */}
-        {loading ? (
+          {loading ? (
             <Box
               sx={{
                 display: "flex",
@@ -329,10 +331,10 @@ export default function SummaryPage() {
               }}
             >
               <CircularProgress sx={{ color: "#0ea5e9" }} />
-          </Box>
-        ) : (
+            </Box>
+          ) : (
             /* サマリーセクション */
-          <Box>
+            <Box>
               {sections.map((section, i) => (
                 <Box
                   key={i}
@@ -371,8 +373,8 @@ export default function SummaryPage() {
                 </Box>
               ))}
             </Box>
-            )}
-          </Box>
+          )}
+        </Box>
       </Paper>
     </Box>
   );

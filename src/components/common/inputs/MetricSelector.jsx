@@ -7,27 +7,30 @@ import {
   FormControlLabel,
   Checkbox,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import { LABELS } from "./LineTrendChart"; // LABELSをここから再利用します
+import { LABELS } from "@/components/charts/LineTrendChart";
 
-export default function MetricSelector({ selected, onToggle }) {
+export function MetricSelector({ value, onChange }) {
   return (
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="subtitle1">表示項目</Typography>
-      <FormGroup row>
-        {Object.entries(LABELS).map(([key, { label }]) => (
-          <FormControlLabel
-            key={key}
-            control={
-              <Checkbox
-                checked={selected.includes(key)}
-                onChange={() => onToggle(key)}
-              />
-            }
-            label={label}
-          />
+    <FormControl fullWidth>
+      <InputLabel id="metric-select-label">指標</InputLabel>
+      <Select
+        labelId="metric-select-label"
+        id="metric-select"
+        value={value}
+        label="指標"
+        onChange={onChange}
+      >
+        {Object.entries(LABELS).map(([key, label]) => (
+          <MenuItem key={key} value={key}>
+            {label}
+          </MenuItem>
         ))}
-      </FormGroup>
-    </Box>
+      </Select>
+    </FormControl>
   );
 }
