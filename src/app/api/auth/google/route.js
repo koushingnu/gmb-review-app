@@ -10,7 +10,10 @@ export async function GET() {
     );
 
     // 必要なスコープを設定
-    const scopes = ["https://www.googleapis.com/auth/business.manage"];
+    const scopes = [
+      "https://www.googleapis.com/auth/business.manage",
+      "https://www.googleapis.com/auth/business.reviews",
+    ];
 
     // 認証URLの生成
     const authUrl = oauth2Client.generateAuthUrl({

@@ -51,7 +51,7 @@ export default function OverallSummary({ summary }) {
             variant="h2"
             fontWeight={900}
             sx={{
-              color: "#274472",
+              color: "#9a3412",
               letterSpacing: 1,
               lineHeight: 1,
               mb: 0.5,
@@ -72,7 +72,7 @@ export default function OverallSummary({ summary }) {
               readOnly
               precision={0.1}
               size="large"
-              sx={{ color: "#1976d2" }}
+              sx={{ color: "#f97316" }}
             />
             <Typography
               variant="body2"
@@ -107,9 +107,9 @@ export default function OverallSummary({ summary }) {
                   minWidth: 110,
                   p: 1,
                   textAlign: "center",
-                  background: "#f8fafc",
+                  background: "#fff7ed",
                   borderRadius: 2,
-                  boxShadow: "0 2px 12px rgba(33,42,90,0.04)",
+                  boxShadow: "0 2px 12px rgba(234, 88, 12, 0.04)",
                 }}
               >
                 <Typography
@@ -126,7 +126,7 @@ export default function OverallSummary({ summary }) {
                 <Typography
                   variant="h5"
                   fontWeight={800}
-                  sx={{ color: "#274472", mb: 0.5, letterSpacing: 1 }}
+                  sx={{ color: "#9a3412", mb: 0.5, letterSpacing: 1 }}
                 >
                   {m.score?.toFixed
                     ? m.score.toFixed(1)
@@ -138,9 +138,9 @@ export default function OverallSummary({ summary }) {
                   sx={{
                     height: 6,
                     borderRadius: 4,
-                    background: "#e3e8f0",
+                    background: "#ffedd5",
                     "& .MuiLinearProgress-bar": {
-                      background: "#1976d2",
+                      background: "#f97316",
                     },
                   }}
                 />
