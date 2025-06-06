@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function OAuthSuccessPage() {
+function OAuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -56,4 +56,27 @@ export default function OAuthSuccessPage() {
     </div>
   );
 }
- 
+
+export default function OAuthSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            flexDirection: "column",
+            gap: "1rem",
+          }}
+        >
+          <h1>読み込み中...</h1>
+          <p>しばらくお待ちください。</p>
+        </div>
+      }
+    >
+      <OAuthCallback />
+    </Suspense>
+  );
+}
