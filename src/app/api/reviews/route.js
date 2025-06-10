@@ -9,6 +9,7 @@ export async function GET(request) {
     const to = searchParams.get("to");
     const sortBy = searchParams.get("sortBy") ?? "newest";
     const filterRating = searchParams.get("filterRating");
+    const limit = searchParams.get("limit");
 
     // review_repliesを「update_time降順」でJOIN
     let query = supabase
@@ -17,16 +18,17 @@ export async function GET(request) {
       .order("update_time", {
         foreignTable: "review_replies",
         ascending: false,
-      }); // ← 追加
+      });
 
     if (from) query = query.gte("create_time", from);
     if (to) query = query.lte("create_time", to);
     if (filterRating) query = query.eq("star_rating", Number(filterRating));
+    if (limit) query = query.limit(Number(limit));
 
     // ソート条件の適用
     switch (sortBy) {
       case "rating_high":
-      query = query.order("star_rating", { ascending: false });
+        query = query.order("star_rating", { ascending: false });
         break;
       case "rating_low":
         query = query.order("star_rating", { ascending: true });
@@ -36,7 +38,7 @@ export async function GET(request) {
         break;
       case "newest":
       default:
-      query = query.order("create_time", { ascending: false });
+        query = query.order("create_time", { ascending: false });
         break;
     }
 

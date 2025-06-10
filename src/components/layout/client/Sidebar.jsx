@@ -36,6 +36,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
+  { label: "ダッシュボード", href: "/dashboard", icon: <DashboardIcon /> },
   { label: "口コミ一覧", href: "/", icon: <RateReviewIcon /> },
   { label: "分析グラフ", href: "/analysis/graphs", icon: <BarChartIcon /> },
   { label: "総評", href: "/analysis/summary", icon: <SummarizeIcon /> },
