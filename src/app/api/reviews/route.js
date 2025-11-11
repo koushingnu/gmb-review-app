@@ -28,7 +28,7 @@ export async function GET(request) {
     // ソート条件の適用
     switch (sortBy) {
       case "rating_high":
-        query = query.order("star_rating", { ascending: false });
+      query = query.order("star_rating", { ascending: false });
         break;
       case "rating_low":
         query = query.order("star_rating", { ascending: true });
@@ -38,7 +38,7 @@ export async function GET(request) {
         break;
       case "newest":
       default:
-        query = query.order("create_time", { ascending: false });
+      query = query.order("create_time", { ascending: false });
         break;
     }
 

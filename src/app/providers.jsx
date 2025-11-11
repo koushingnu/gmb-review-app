@@ -34,10 +34,10 @@ export default function Providers({ children }) {
     <CacheProvider value={cache}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <DateFilterProvider>
+      <DateFilterProvider>
           <LoadingScreen />
           {children}
-        </DateFilterProvider>
+      </DateFilterProvider>
       </ThemeProvider>
     </CacheProvider>
   );

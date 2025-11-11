@@ -121,7 +121,7 @@ export default function GraphPage() {
       }}
     >
       <Box sx={{ width: "100%" }}>
-        <OverallSummary summary={summaryData} />
+      <OverallSummary summary={summaryData} />
       </Box>
 
       <Paper

@@ -250,44 +250,44 @@ export default function Sidebar({
               mb: isMenuOpen ? 2 : 0,
             }}
           >
-            {navItems.map((item) => (
-              <ListItemButton
-                key={item.href}
-                component={Link}
-                href={item.href}
-                selected={pathname === item.href}
-                sx={{
-                  borderRadius: 1,
-                  mb: 0.5,
+          {navItems.map((item) => (
+            <ListItemButton
+              key={item.href}
+              component={Link}
+              href={item.href}
+              selected={pathname === item.href}
+              sx={{
+                borderRadius: 1,
+                mb: 0.5,
                   color:
                     pathname === item.href ? "primary.main" : "text.primary",
-                  bgcolor:
-                    pathname === item.href ? "primary.lighter" : "transparent",
-                  "&:hover": {
-                    bgcolor: "primary.lighter",
-                  },
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 40,
-                    color:
+                bgcolor:
+                  pathname === item.href ? "primary.lighter" : "transparent",
+                "&:hover": {
+                  bgcolor: "primary.lighter",
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color:
                       pathname === item.href
                         ? "primary.main"
                         : "text.secondary",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontSize: "0.875rem",
-                    fontWeight: pathname === item.href ? 600 : 500,
-                  }}
-                />
-              </ListItemButton>
-            ))}
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.label}
+                primaryTypographyProps={{
+                  fontSize: "0.875rem",
+                  fontWeight: pathname === item.href ? 600 : 500,
+                }}
+              />
+            </ListItemButton>
+          ))}
           </Box>
         </List>
 

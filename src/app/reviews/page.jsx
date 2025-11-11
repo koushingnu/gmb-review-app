@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import ReviewsList from "@/features/reviews/components/list/ReviewsList";
 import DateFilterControls from "@/features/reviews/components/filters/DateFilterControls";
 import { useDateFilter } from "@/lib/DateFilterContext";
+import LoadingScreen from "@/components/common/LoadingScreen";
 import {
   Box,
   Typography,
@@ -49,6 +50,8 @@ import HelpIcon from "@mui/icons-material/Help";
 import Rating from "@mui/material/Rating";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import CompareIcon from "@mui/icons-material/Compare";
+import { supabase } from "@/lib/supabase";
+import { useSearchParams } from "next/navigation";
 
 // Snackbar 用アラート
 const AlertSnackbar = React.forwardRef(function Alert(props, ref) {
@@ -61,11 +64,13 @@ export default function ReviewsDashboard() {
   const [reviews, setReviews] = useState([]);
   const [sortBy, setSortBy] = useState("newest");
   const [filterRating, setFilterRating] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [newCount, setNewCount] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(true);
+  const [needsReauth, setNeedsReauth] = useState(false);
+  const searchParams = useSearchParams();
 
   // 年の選択肢を生成（現在の年から3年前まで）
   const years = useMemo(() => {
@@ -122,20 +127,40 @@ export default function ReviewsDashboard() {
     async function checkGoogleToken() {
       try {
         const res = await fetch("/api/google/token-check");
+        const data = await res.json();
+
         if (!res.ok) {
-          throw new Error(
-            "Googleトークン認証エラー。再ログインが必要かもしれません。"
-          );
+          if (res.status === 401 && data.needsAuth) {
+            // トークンが存在しない、またはリフレッシュトークンが無効な場合
+            setNeedsReauth(true);
+            setError(
+              data.errorType === "INVALID_REFRESH_TOKEN"
+                ? "Google認証の有効期限が切れました。再認証を行ってください。"
+                : "Google認証が必要です。認証を行ってください。"
+            );
+            return;
+          }
+          throw new Error(data.error || "Googleトークン認証エラー");
         }
-        const json = await res.json();
-        console.log("アクセストークン有効:", json.access_token);
+
+        console.log("アクセストークン有効:", data.access_token);
+        setNeedsReauth(false);
+        setError(null);
       } catch (e) {
         console.error(e);
         setError(e.message);
+      } finally {
+        setLoading(false);
       }
     }
+
     checkGoogleToken();
   }, []);
+
+  // 再認証ボタンのハンドラー
+  const handleReauth = () => {
+    window.location.href = "/api/auth/google";
+  };
 
   // レビュー取得
   const loadReviews = async () => {
@@ -224,6 +249,30 @@ export default function ReviewsDashboard() {
 
   const handleSnackbarClose = () => setSnackbarOpen(false);
 
+  if (loading) {
+    return (
+      <Paper
+        elevation={2}
+        sx={{
+          background: "linear-gradient(90deg, #f7fafd 70%, #eef1f8 100%)",
+          borderRadius: 2,
+          boxShadow: "0 4px 24px rgba(33,42,90,0.08)",
+          minHeight: "400px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress size={40} />
+          <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
+            読み込み中...
+          </Typography>
+        </Box>
+      </Paper>
+    );
+  }
+
   return (
     <Paper
       elevation={2}
@@ -231,8 +280,45 @@ export default function ReviewsDashboard() {
         background: "linear-gradient(90deg, #f7fafd 70%, #eef1f8 100%)",
         borderRadius: 2,
         boxShadow: "0 4px 24px rgba(33,42,90,0.08)",
+        position: "relative",
       }}
     >
+      {needsReauth && (
+        <Alert
+          severity="warning"
+          sx={{
+            mb: 0,
+            borderRadius: "8px 8px 0 0",
+          }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={handleReauth}
+              startIcon={
+                <svg
+                  style={{ width: "20px", height: "20px" }}
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12.545,12.151L12.545,12.151c0,1.054,0.855,1.909,1.909,1.909h3.536c-0.607,1.972-2.405,3.404-4.536,3.404
+                    c-2.626,0-4.754-2.128-4.754-4.754s2.128-4.754,4.754-4.754c1.26,0,2.404,0.492,3.255,1.293l1.486-1.486
+                    C16.683,6.462,14.952,5.818,13,5.818c-3.866,0-7,3.134-7,7s3.134,7,7,7s7-3.134,7-7h-4.455
+                    C14.445,12.818,13.599,12.151,12.545,12.151z"
+                    fill="currentColor"
+                  />
+                </svg>
+              }
+            >
+              再認証
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
+
       {/* フィルター部分 */}
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         <DateFilterControls
@@ -249,13 +335,7 @@ export default function ReviewsDashboard() {
 
       {/* レビュー一覧部分 */}
       <Box>
-        {loading && (
-          <Box sx={{ textAlign: "center", py: 4 }}>
-            <CircularProgress />
-          </Box>
-        )}
-
-        {error && (
+        {error && !needsReauth && (
           <Alert severity="error" sx={{ mx: 3, mt: 3 }}>
             {error}
           </Alert>
