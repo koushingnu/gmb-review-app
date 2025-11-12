@@ -16,8 +16,26 @@ function OAuthCallback() {
   useEffect(() => {
     async function saveTokens() {
       try {
+        // エラーパラメータをチェック
+        const errorParam = searchParams.get("error");
+        const errorDescription = searchParams.get("error_description");
+
+        if (errorParam) {
+          console.error("[OAuth Success] エラー:", errorParam, errorDescription);
+          throw new Error(
+            errorDescription || `認証エラーが発生しました: ${errorParam}`
+          );
+        }
+
         const access_token = searchParams.get("access_token");
         const refresh_token = searchParams.get("refresh_token");
+
+        console.log("[OAuth Success] トークン確認:", {
+          has_access: !!access_token,
+          has_refresh: !!refresh_token,
+          access_length: access_token?.length || 0,
+          refresh_length: refresh_token?.length || 0,
+        });
 
         if (!access_token || !refresh_token) {
           throw new Error(
@@ -27,16 +45,22 @@ function OAuthCallback() {
 
         setStatus((prev) => ({ ...prev, message: "認証情報を保存中..." }));
 
-        // 既存のトークンを削除（クリーンアップ）
-        await supabase.from("google_tokens").delete().not("id", "eq", 1);
+        console.log("[OAuth Success] トークンを保存開始");
+        console.log("[OAuth Success] 現在時刻:", new Date().toISOString());
 
-        // 新しいトークンを保存
+        // 新しいトークンを保存（upsertで既存レコードを上書き）
+        const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString(); // 1時間後（Googleの実際の有効期限）
         const { error } = await supabase.from("google_tokens").upsert({
           id: 1, // 単一レコードとして管理
           access_token,
           refresh_token,
-          expires_at: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(), // 1週間後
+          expires_at: expiresAt,
           updated_at: new Date().toISOString(),
+        });
+
+        console.log("[OAuth Success] 保存完了:", {
+          has_error: !!error,
+          expires_at: expiresAt,
         });
 
         if (error) throw error;

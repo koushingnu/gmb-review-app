@@ -405,8 +405,9 @@ export async function GET() {
       }
 
       let aiScore = null;
-      // AIスコアリングは新規 or コメント変更時のみ
-      if (needUpsert && needAI && comment && comment.length > 0) {
+      // AIスコアリングは一時的に無効化（OpenAI APIクォータ超過のため）
+      // TODO: OpenAI APIの利用制限を確認・アップグレード後に有効化
+      if (false && needUpsert && needAI && comment && comment.length > 0) {
         const aiStart = process.hrtime();
         try {
           const prompt = AI_PROMPT + comment;
