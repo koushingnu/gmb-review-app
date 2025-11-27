@@ -62,13 +62,23 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error("[AUTH] プロフィール取得エラー:", error);
+        console.error("[AUTH] エラー詳細 - code:", error.code);
+        console.error("[AUTH] エラー詳細 - message:", error.message);
+        console.error("[AUTH] エラー詳細 - details:", error.details);
+        console.error("[AUTH] エラー詳細 - hint:", error.hint);
         throw error;
+      }
+
+      if (!data) {
+        console.error("[AUTH] プロフィールデータが存在しません");
+        throw new Error("User profile not found");
       }
 
       console.log("[AUTH] プロフィール取得成功:", data);
       setUserProfile(data);
     } catch (error) {
       console.error("[AUTH] ユーザープロフィール取得エラー:", error);
+      console.error("[AUTH] エラー全体:", JSON.stringify(error, null, 2));
       // プロフィールが存在しない場合は、ログアウトさせる
       await supabase.auth.signOut();
     } finally {
