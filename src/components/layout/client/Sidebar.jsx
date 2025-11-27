@@ -35,13 +35,21 @@ import ChatIcon from "@mui/icons-material/Chat";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// 🚀 MVP Phase 1: レビュー一覧のみ
 const navItems = [
-  { label: "ダッシュボード", href: "/dashboard", icon: <DashboardIcon /> },
   { label: "口コミ一覧", href: "/", icon: <RateReviewIcon /> },
-  { label: "分析グラフ", href: "/analysis/graphs", icon: <BarChartIcon /> },
-  { label: "総評", href: "/analysis/summary", icon: <SummarizeIcon /> },
-  { label: "四半期AI比較", href: "/analysis/compare", icon: <CompareIcon /> },
+  // Phase 2: AI自動返信（Coming Soon）
+  // Phase 3: AI分析（Coming Soon）
 ];
+
+// 将来実装予定の機能
+// const navItemsFull = [
+//   { label: "ダッシュボード", href: "/dashboard", icon: <DashboardIcon /> },
+//   { label: "口コミ一覧", href: "/", icon: <RateReviewIcon /> },
+//   { label: "分析グラフ", href: "/analysis/graphs", icon: <BarChartIcon /> },
+//   { label: "総評", href: "/analysis/summary", icon: <SummarizeIcon /> },
+//   { label: "四半期AI比較", href: "/analysis/compare", icon: <CompareIcon /> },
+// ];
 
 export default function Sidebar({
   isSidebarOpen,

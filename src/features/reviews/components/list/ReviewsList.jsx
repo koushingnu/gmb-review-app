@@ -28,10 +28,19 @@ import { gradients, shadows, backgrounds } from "../../../../lib/tokens/colors";
 
 const MotionPaper = motion.create(Paper);
 
-export default function ReviewsList({ reviews, loading, onRefresh }) {
+export default function ReviewsList({ reviews, loading, onRefresh, onReplyClick }) {
   const [replyOpen, setReplyOpen] = useState({});
   const [replyText, setReplyText] = useState({});
   const [sending, setSending] = useState({});
+
+  const handleReplyClick = (review) => {
+    if (onReplyClick) {
+      onReplyClick(review);
+    } else {
+      // フォールバック: ローカルでの返信UI表示
+      setReplyOpen((prev) => ({ ...prev, [review.review_id]: true }));
+    }
+  };
 
   const handleSendReply = async (review_id) => {
     const comment = replyText[review_id];

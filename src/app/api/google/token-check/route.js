@@ -1,16 +1,25 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
   try {
-    // 1. トークンの存在チェック
-    const { data, error } = await supabase
+    console.log("[TOKEN_CHECK] トークンチェック開始");
+    
+    // 1. トークンの存在チェック（IDが1のレコードを取得）
+    const { data, error } = await supabaseAdmin
       .from("google_tokens")
       .select("*")
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .eq("id", 1)
       .single();
 
+    console.log("[TOKEN_CHECK] トークン取得結果:", {
+      hasData: !!data,
+      hasError: !!error,
+      error: error?.message,
+      dataId: data?.id,
+    });
+
     if (error || !data) {
+      console.log("[TOKEN_CHECK] トークンが存在しません");
       return new Response(
         JSON.stringify({
           error: "トークンが存在しません",
@@ -61,7 +70,7 @@ export async function GET() {
       // リフレッシュトークンが無効な場合
       if (tokenData.error === "invalid_grant") {
         // リフレッシュトークンを削除
-        await supabase
+        await supabaseAdmin
           .from("google_tokens")
           .delete()
           .eq("refresh_token", data.refresh_token);
@@ -100,7 +109,7 @@ export async function GET() {
 
     console.log("[TOKEN] 新しいトークンの有効期限:", expiresAt);
 
-    const { error: updateError } = await supabase.from("google_tokens").upsert({
+    const { error: updateError } = await supabaseAdmin.from("google_tokens").upsert({
       id: data.id,
       access_token: tokenData.access_token,
       refresh_token: data.refresh_token,

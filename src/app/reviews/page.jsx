@@ -129,9 +129,16 @@ function ReviewsDashboard() {
         const res = await fetch("/api/google/token-check");
         const data = await res.json();
 
+        console.log("[Reviews] トークンチェック結果:", {
+          status: res.status,
+          ok: res.ok,
+          data,
+        });
+
         if (!res.ok) {
           if (res.status === 401 && data.needsAuth) {
             // トークンが存在しない、またはリフレッシュトークンが無効な場合
+            console.log("[Reviews] 再認証が必要:", data.errorType);
             setNeedsReauth(true);
             setError(
               data.errorType === "INVALID_REFRESH_TOKEN"
@@ -143,11 +150,11 @@ function ReviewsDashboard() {
           throw new Error(data.error || "Googleトークン認証エラー");
         }
 
-        console.log("アクセストークン有効:", data.access_token);
+        console.log("[Reviews] アクセストークン有効");
         setNeedsReauth(false);
         setError(null);
       } catch (e) {
-        console.error(e);
+        console.error("[Reviews] トークンチェックエラー:", e);
         setError(e.message);
       } finally {
         setLoading(false);
@@ -247,6 +254,38 @@ function ReviewsDashboard() {
     }
   };
 
+  // AI再評価
+  const handleAiRescore = async () => {
+    if (
+      !confirm(
+        "全レビューをAIで再評価します。\nOpenAI APIのクォータを消費します。\n実行しますか？"
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setNewCount(null);
+    try {
+      const rescoreRes = await fetch("/api/reviews/ai-rescore", {
+        method: "POST",
+      });
+      const rescoreJson = await rescoreRes.json();
+      if (!rescoreRes.ok) {
+        throw new Error(rescoreJson.error || "AI再評価に失敗しました");
+      }
+      setNewCount(rescoreJson.count || 0);
+      setSnackbarOpen(true);
+      await loadReviews();
+    } catch (e) {
+      console.error("AI再評価エラー:", e);
+      setError(e.message || "AI再評価に失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSnackbarClose = () => setSnackbarOpen(false);
 
   if (loading) {
@@ -325,6 +364,7 @@ function ReviewsDashboard() {
           onShowAll={setShowAll}
           showAll={showAll}
           onSync={handleSync}
+          onAiRescore={handleAiRescore}
           loading={loading}
           sortBy={sortBy}
           onSortChange={setSortBy}

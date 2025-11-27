@@ -18,6 +18,7 @@ import {
 import { motion } from "framer-motion";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SyncIcon from "@mui/icons-material/Sync";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { useDateFilter } from "@/lib/DateFilterContext";
 
 const MotionPaper = motion(Paper);
@@ -40,6 +41,7 @@ export default function DateFilterControls({
   onShowAll,
   showAll,
   onSync,
+  onAiRescore,
   loading,
   sortBy,
   onSortChange,
@@ -173,31 +175,54 @@ export default function DateFilterControls({
             </Button>
           </Stack>
 
-          {/* 右側の同期ボタン */}
-          <Tooltip title="レビューを同期">
-            <IconButton
-              onClick={onSync}
-              disabled={loading}
-              sx={{
-                width: { xs: "100%", sm: "40px" },
-                height: "40px",
-                backgroundColor: "primary.main",
-                color: "white",
-                "&:hover": {
-                  backgroundColor: "primary.dark",
-                },
-                "& .MuiSvgIcon-root": {
-                  animation: loading ? "spin 1s linear infinite" : "none",
-                  "@keyframes spin": {
-                    "0%": { transform: "rotate(0deg)" },
-                    "100%": { transform: "rotate(360deg)" },
+          {/* 右側のボタン群 */}
+          <Stack direction="row" spacing={1}>
+            <Tooltip title="AI再評価">
+              <IconButton
+                onClick={onAiRescore}
+                disabled={loading}
+                sx={{
+                  width: "40px",
+                  height: "40px",
+                  backgroundColor: "secondary.main",
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "secondary.dark",
                   },
-                },
-              }}
-            >
-              <SyncIcon />
-            </IconButton>
-          </Tooltip>
+                  "&:disabled": {
+                    backgroundColor: "action.disabledBackground",
+                  },
+                }}
+              >
+                <AutoAwesomeIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="レビューを同期">
+              <IconButton
+                onClick={onSync}
+                disabled={loading}
+                sx={{
+                  width: "40px",
+                  height: "40px",
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                  "& .MuiSvgIcon-root": {
+                    animation: loading ? "spin 1s linear infinite" : "none",
+                    "@keyframes spin": {
+                      "0%": { transform: "rotate(0deg)" },
+                      "100%": { transform: "rotate(360deg)" },
+                    },
+                  },
+                }}
+              >
+                <SyncIcon />
+              </IconButton>
+            </Tooltip>
+          </Stack>
         </Stack>
       </Stack>
     </Box>
