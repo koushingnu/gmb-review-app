@@ -18,7 +18,6 @@ import {
 import { motion } from "framer-motion";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SyncIcon from "@mui/icons-material/Sync";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { useDateFilter } from "@/lib/DateFilterContext";
 
 const MotionPaper = motion(Paper);
@@ -41,7 +40,6 @@ export default function DateFilterControls({
   onShowAll,
   showAll,
   onSync,
-  onAiRescore,
   loading,
   sortBy,
   onSortChange,
@@ -177,27 +175,6 @@ export default function DateFilterControls({
 
           {/* 右側のボタン群 */}
           <Stack direction="row" spacing={1}>
-            <Tooltip title="AI再評価">
-              <IconButton
-                onClick={onAiRescore}
-                disabled={loading}
-                sx={{
-                  width: "40px",
-                  height: "40px",
-                  backgroundColor: "secondary.main",
-                  color: "white",
-                  "&:hover": {
-                    backgroundColor: "secondary.dark",
-                  },
-                  "&:disabled": {
-                    backgroundColor: "action.disabledBackground",
-                  },
-                }}
-              >
-                <AutoAwesomeIcon />
-              </IconButton>
-            </Tooltip>
-
             <Tooltip title="レビューを同期">
               <IconButton
                 onClick={onSync}

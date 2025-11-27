@@ -254,38 +254,6 @@ function ReviewsDashboard() {
     }
   };
 
-  // AI再評価
-  const handleAiRescore = async () => {
-    if (
-      !confirm(
-        "全レビューをAIで再評価します。\nOpenAI APIのクォータを消費します。\n実行しますか？"
-      )
-    ) {
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setNewCount(null);
-    try {
-      const rescoreRes = await fetch("/api/reviews/ai-rescore", {
-        method: "POST",
-      });
-      const rescoreJson = await rescoreRes.json();
-      if (!rescoreRes.ok) {
-        throw new Error(rescoreJson.error || "AI再評価に失敗しました");
-      }
-      setNewCount(rescoreJson.count || 0);
-      setSnackbarOpen(true);
-      await loadReviews();
-    } catch (e) {
-      console.error("AI再評価エラー:", e);
-      setError(e.message || "AI再評価に失敗しました");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSnackbarClose = () => setSnackbarOpen(false);
 
   if (loading) {
@@ -364,7 +332,6 @@ function ReviewsDashboard() {
           onShowAll={setShowAll}
           showAll={showAll}
           onSync={handleSync}
-          onAiRescore={handleAiRescore}
           loading={loading}
           sortBy={sortBy}
           onSortChange={setSortBy}
