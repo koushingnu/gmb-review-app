@@ -29,9 +29,9 @@ import MenuIcon from "@mui/icons-material/Menu";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SummarizeIcon from "@mui/icons-material/Summarize";
 import CompareIcon from "@mui/icons-material/Compare";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import StarIcon from "@mui/icons-material/Star";
 import ChatIcon from "@mui/icons-material/Chat";
+import LogoutIcon from "@mui/icons-material/Logout";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/contexts/AuthContext";
@@ -453,35 +453,8 @@ export default function Sidebar({
           </Paper>
         </Box>
 
-        {/* 管理者ボタンとユーザーメニュー */}
+        {/* ユーザー情報とログアウト */}
         <Box sx={{ mt: "auto", pt: 2 }}>
-          <Button
-            component={Link}
-            href="/admin"
-            startIcon={<AdminPanelSettingsIcon />}
-            variant="contained"
-            fullWidth
-            sx={{
-              mb: 2,
-              background: gradients.primary.default,
-              color: "white",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              py: 1.2,
-              borderRadius: "12px",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              boxShadow: "0 2px 12px rgba(249, 115, 22, 0.2)",
-              transition: "all 0.3s ease",
-              "&:hover": {
-                background: gradients.primary.hover,
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 16px rgba(249, 115, 22, 0.3)",
-              },
-            }}
-          >
-            管理者
-          </Button>
-          <Divider sx={{ mb: 2 }} />
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Tooltip title="ユーザーメニュー">
               <IconButton
@@ -569,21 +542,32 @@ export default function Sidebar({
             <MenuItem component={Link} href="/settings">
               設定
             </MenuItem>
-            <MenuItem
-              onClick={() => {
-                handleClose();
-                signOut();
-              }}
-              sx={{
-                color: "#ef4444 !important",
-                "&:hover": {
-                  background: "rgba(239, 68, 68, 0.08) !important",
-                },
-              }}
-            >
-              ログアウト
-            </MenuItem>
           </Menu>
+          
+          {/* ログアウトボタン */}
+          <Button
+            onClick={signOut}
+            startIcon={<LogoutIcon />}
+            variant="outlined"
+            fullWidth
+            sx={{
+              mt: 2,
+              color: "#ef4444",
+              borderColor: "#ef4444",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              py: 1.2,
+              borderRadius: "12px",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                borderColor: "#dc2626",
+                backgroundColor: "rgba(239, 68, 68, 0.08)",
+                transform: "translateY(-1px)",
+              },
+            }}
+          >
+            ログアウト
+          </Button>
         </Box>
       </Box>
     </Box>
