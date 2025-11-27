@@ -6,18 +6,23 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import createCache from "@emotion/cache";
 import createEmotionServer from "@emotion/server/create-instance";
-import { useServerInsertedHTML } from "next/navigation";
+import { useServerInsertedHTML, usePathname } from "next/navigation";
 import { DateFilterProvider } from "@/lib/DateFilterContext";
+import { AuthProvider } from "@/lib/contexts/AuthContext";
 import { AnimatePresence } from "framer-motion";
 import theme from "@/lib/theme";
 import ClientLayout from "./ClientLayout";
 import LoadingScreen from "@/components/common/LoadingScreen";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 // Emotion キャッシュと SSR 設定
 const cache = createCache({ key: "css", prepend: true });
 const { extractCriticalToChunks } = createEmotionServer(cache);
 
 export default function RootLayoutClient({ children }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/login";
+
   useServerInsertedHTML(() => {
     const chunks = extractCriticalToChunks("");
     return chunks.styles.map((style) => (
@@ -34,12 +39,22 @@ export default function RootLayoutClient({ children }) {
     <CacheProvider value={cache}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <DateFilterProvider>
-          <LoadingScreen />
-          <AnimatePresence mode="wait">
-            <ClientLayout>{children}</ClientLayout>
-          </AnimatePresence>
-        </DateFilterProvider>
+        <AuthProvider>
+          <AuthGuard>
+            {isLoginPage ? (
+              // ログインページはレイアウトなし
+              children
+            ) : (
+              // その他のページはClientLayoutでラップ
+              <DateFilterProvider>
+                <LoadingScreen />
+                <AnimatePresence mode="wait">
+                  <ClientLayout>{children}</ClientLayout>
+                </AnimatePresence>
+              </DateFilterProvider>
+            )}
+          </AuthGuard>
+        </AuthProvider>
       </ThemeProvider>
     </CacheProvider>
   );

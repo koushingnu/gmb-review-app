@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { getCompanyIdFromUser } from "@/lib/getCompanyId";
 
 export async function GET(request) {
   try {
+    // 認証チェック & company_id取得
+    const companyId = await getCompanyIdFromUser();
+    if (!companyId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
 
     const from = searchParams.get("from");
@@ -12,9 +19,11 @@ export async function GET(request) {
     const limit = searchParams.get("limit");
 
     // review_repliesを「update_time降順」でJOIN
+    // RLSにより自動的に自社のレビューのみ取得されるが、明示的にフィルター
     let query = supabase
       .from("reviews")
       .select("*, review_replies(comment, update_time)")
+      .eq("company_id", companyId)
       .order("update_time", {
         foreignTable: "review_replies",
         ascending: false,

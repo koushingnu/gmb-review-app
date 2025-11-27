@@ -1,19 +1,28 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { getCompanyIdFromUser } from "@/lib/getCompanyId";
 
 export async function GET() {
   try {
-    // 全レビュー数を取得
+    // 認証チェック & company_id取得
+    const companyId = await getCompanyIdFromUser();
+    if (!companyId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 全レビュー数を取得（自社のみ）
     const { count: totalReviews, error: countError } = await supabase
       .from("reviews")
-      .select("*", { count: "exact" });
+      .select("*", { count: "exact" })
+      .eq("company_id", companyId);
 
     if (countError) throw countError;
 
-    // 平均評価を取得
+    // 平均評価を取得（自社のみ）
     const { data: avgData, error: avgError } = await supabase
       .from("reviews")
-      .select("star_rating");
+      .select("star_rating")
+      .eq("company_id", companyId);
 
     if (avgError) throw avgError;
 
@@ -21,16 +30,17 @@ export async function GET() {
       avgData.reduce((acc, curr) => acc + curr.star_rating, 0) /
       (avgData.length || 1);
 
-    // 返信情報を取得（返信時間の計算も含む）
-    const { data: reviewsWithReplies, error: replyError } = await supabase.from(
-      "reviews"
-    ).select(`
+    // 返信情報を取得（返信時間の計算も含む、自社のみ）
+    const { data: reviewsWithReplies, error: replyError } = await supabase
+      .from("reviews")
+      .select(`
         *,
         review_replies (
           id,
           update_time
         )
-      `);
+      `)
+      .eq("company_id", companyId);
 
     if (replyError) throw replyError;
 
@@ -75,16 +85,18 @@ export async function GET() {
       1
     ).toISOString();
 
-    // 今月のレビュー数
+    // 今月のレビュー数（自社のみ）
     const { count: monthlyReviews } = await supabase
       .from("reviews")
       .select("*", { count: "exact" })
+      .eq("company_id", companyId)
       .gte("create_time", thisMonth);
 
-    // 先月のレビュー数
+    // 先月のレビュー数（自社のみ）
     const { count: lastMonthReviews } = await supabase
       .from("reviews")
       .select("*", { count: "exact" })
+      .eq("company_id", companyId)
       .gte("create_time", lastMonth)
       .lt("create_time", thisMonth);
 

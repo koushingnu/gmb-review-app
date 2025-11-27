@@ -34,6 +34,7 @@ import StarIcon from "@mui/icons-material/Star";
 import ChatIcon from "@mui/icons-material/Chat";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 // 🚀 MVP Phase 1: レビュー一覧のみ
 const navItems = [
@@ -58,6 +59,7 @@ export default function Sidebar({
   setIsMenuOpen,
 }) {
   const pathname = usePathname();
+  const { user, userProfile, signOut } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const [stats, setStats] = useState({
     totalReviews: 0,
@@ -515,10 +517,10 @@ export default function Sidebar({
             </Tooltip>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                ユーザー名
+                {userProfile?.display_name || user?.email?.split("@")[0] || "ユーザー"}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                user@example.com
+                {user?.email || ""}
               </Typography>
             </Box>
           </Box>
@@ -568,6 +570,10 @@ export default function Sidebar({
               設定
             </MenuItem>
             <MenuItem
+              onClick={() => {
+                handleClose();
+                signOut();
+              }}
               sx={{
                 color: "#ef4444 !important",
                 "&:hover": {
