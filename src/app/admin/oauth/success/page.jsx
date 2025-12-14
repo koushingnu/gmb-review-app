@@ -48,19 +48,39 @@ function OAuthCallback() {
         console.log("[OAuth Success] トークンを保存開始");
         console.log("[OAuth Success] 現在時刻:", new Date().toISOString());
 
-        // 新しいトークンを保存（upsertで既存レコードを上書き）
+        // 現在のユーザー情報を取得
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("ユーザー情報が取得できません。ログインしてください。");
+        }
+
+        // ユーザーのcompany_idを取得
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("company_id")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError || !profile) {
+          throw new Error("会社情報が取得できません。管理者に連絡してください。");
+        }
+
+        // 新しいトークンを保存（会社ごとに管理）
         const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString(); // 1時間後（Googleの実際の有効期限）
         const { error } = await supabase.from("google_tokens").upsert({
-          id: 1, // 単一レコードとして管理
+          company_id: profile.company_id,
           access_token,
           refresh_token,
           expires_at: expiresAt,
           updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'company_id'
         });
 
         console.log("[OAuth Success] 保存完了:", {
           has_error: !!error,
           expires_at: expiresAt,
+          company_id: profile.company_id,
         });
 
         if (error) throw error;

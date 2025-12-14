@@ -22,6 +22,8 @@ const { extractCriticalToChunks } = createEmotionServer(cache);
 export default function RootLayoutClient({ children }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
+  const isOAuthCallback = pathname === "/admin/oauth/success";
+  const isPublicPage = isLoginPage || isOAuthCallback;
 
   useServerInsertedHTML(() => {
     const chunks = extractCriticalToChunks("");
@@ -40,20 +42,20 @@ export default function RootLayoutClient({ children }) {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <AuthGuard>
-            {isLoginPage ? (
-              // ログインページはレイアウトなし
-              children
-            ) : (
-              // その他のページはClientLayoutでラップ
+          {isPublicPage ? (
+            // ログインページとOAuthコールバックはAuthGuard不要
+            children
+          ) : (
+            // その他のページはAuthGuardで保護
+            <AuthGuard>
               <DateFilterProvider>
                 <LoadingScreen />
                 <AnimatePresence mode="wait">
                   <ClientLayout>{children}</ClientLayout>
                 </AnimatePresence>
               </DateFilterProvider>
-            )}
-          </AuthGuard>
+            </AuthGuard>
+          )}
         </AuthProvider>
       </ThemeProvider>
     </CacheProvider>
